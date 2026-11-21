@@ -1,0 +1,47 @@
+name: ECA Weekly Free Database Backup
+
+on:
+  schedule:
+    # Runs every Sunday at 02:30 UTC (08:00 AM IST) — 100% Free on GitHub Actions
+    - cron: "30 2 * * 0"
+  workflow_dispatch:
+
+jobs:
+  backup-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Export Core Supabase Tables to JSON
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p backup_export
+          python3 - <<'PY'
+          import os, json, urllib.request
+
+          base = (os.getenv("SUPABASE_URL") or "").rstrip("/")
+          key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or ""
+          if not base or not key:
+              print("Supabase secrets not configured; skipping backup.")
+              raise SystemExit(0)
+
+          tables = ["current_affairs", "batches", "site_cms_state", "test_series", "upi_orders", "admin_audit_logs"]
+          for tbl in tables:
+              url = f"{base}/rest/v1/{tbl}?select=*"
+              req = urllib.request.Request(url, headers={"apikey": key, "Authorization": f"Bearer {key}"})
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      data = resp.read().decode("utf-8")
+                  with open(f"backup_export/{tbl}.json", "w", encoding="utf-8") as f:
+                      f.write(data)
+                  print(f"Backed up {tbl}")
+              except Exception as e:
+                  print(f"Skipped {tbl}: {e}")
+          PY
+
+      - name: Upload Backup Artifact (Retained 90 Days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: eca-weekly-db-backup
+          path: backup_export/
+          retention-days: 90

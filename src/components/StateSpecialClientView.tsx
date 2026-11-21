@@ -1,0 +1,163 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
+import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
+import DualPdfButton from "@/components/DualPdfButton";
+import { Star, Languages } from "lucide-react";
+
+export default function StateSpecialClientView({ stateName }: { stateName: string }) {
+  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [sectionTab, setSectionTab] = useState<"state_ca" | "state_gs">("state_ca");
+  const [allArticles, setAllArticles] = useState<BilingualCurrentAffairItem[]>(
+    STRUCTURED_CURRENT_AFFAIRS
+  );
+
+  useEffect(() => {
+    fetch(`/api/current-affairs?state=${encodeURIComponent(stateName)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.articles)) {
+          setAllArticles(d.articles);
+        }
+      })
+      .catch(() => {});
+  }, [stateName]);
+
+  const stateNews = allArticles.filter((item) => item.stateName === stateName);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSectionTab("state_ca")}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition ${
+              sectionTab === "state_ca"
+                ? "bg-[#E60000] text-white"
+                : "bg-white border border-slate-200 text-slate-700"
+            }`}
+          >
+            {stateName} Current Affairs
+          </button>
+          <button
+            onClick={() => setSectionTab("state_gs")}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition ${
+              sectionTab === "state_gs"
+                ? "bg-[#E60000] text-white"
+                : "bg-white border border-slate-200 text-slate-700"
+            }`}
+          >
+            {stateName} State GS
+          </button>
+        </div>
+
+        <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs text-xs font-extrabold">
+          <Languages className="w-3.5 h-3.5 text-[#0B1B3D] mx-1.5" />
+          <button
+            onClick={() => setLang("en")}
+            className={`px-3 py-1.5 rounded-lg transition ${
+              lang === "en" ? "bg-[#0B1B3D] text-white" : "text-slate-700"
+            }`}
+          >
+            English
+          </button>
+          <button
+            onClick={() => setLang("hi")}
+            className={`px-3 py-1.5 rounded-lg transition ${
+              lang === "hi" ? "bg-[#E60000] text-white" : "text-slate-700"
+            }`}
+          >
+            हिन्दी
+          </button>
+        </div>
+      </div>
+
+      {sectionTab === "state_ca" ? (
+        <div className="space-y-4">
+          {stateNews.length > 0 ? (
+            stateNews.map((news) => {
+              const loc = getLocalizedCa(news, lang);
+              return (
+                <div
+                  key={news.id}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <span className="bg-red-50 text-[#E60000] text-xs font-extrabold px-2.5 py-0.5 rounded">
+                      {stateName} • {news.date}
+                    </span>
+                    <DualPdfButton
+                      title={loc.title}
+                      englishUrl={news.englishPdfUrl}
+                      hindiUrl={news.hindiPdfUrl}
+                      compact
+                    />
+                  </div>
+                  <Link href={`/current-affairs/${news.slug}`}>
+                    <h2 className="text-lg font-extrabold text-[#0B1B3D] hover:text-[#E60000]">
+                      {loc.title}
+                    </h2>
+                  </Link>
+                  <div className="mt-2.5 bg-slate-50 border-l-4 border-[#0B1B3D] p-3 rounded-r-xl">
+                    <div className="text-[11px] font-extrabold text-[#0B1B3D] uppercase">
+                      {lang === "hi" ? "खबरों में क्यों है (Why in News)" : "Why in News"}
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-700 mt-1">{loc.whyInNews}</p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-700 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                      {loc.prelimsFacts.length} Prelims Facts
+                    </span>
+                    <Link
+                      href={`/current-affairs/${news.slug}`}
+                      className="text-xs font-extrabold text-[#E60000] hover:underline"
+                    >
+                      {lang === "hi" ? "पूरी व्याख्या पढ़ें →" : "Full Structured Analysis →"}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-extrabold text-[#E60000]">
+                  {stateName} • {lang === "hi" ? "हिन्दी माध्यम" : "English Medium"}
+                </span>
+                <h2 className="text-base font-extrabold text-[#0B1B3D] mt-1">
+                  {stateName} Daily & Monthly State Current Affairs Compilation
+                </h2>
+              </div>
+              <DualPdfButton title={`${stateName} State Current Affairs`} compact />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            `${stateName} History, Art & Culture`,
+            `${stateName} Geography, Rivers & Minerals`,
+            `${stateName} Polity, Governance & Districts`,
+            `${stateName} Budget, Economy & Census`,
+          ].map((topic, idx) => (
+            <div
+              key={idx}
+              className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between gap-3 shadow-sm"
+            >
+              <div>
+                <span className="text-[11px] font-bold text-slate-500">
+                  State GS • {lang === "hi" ? "हिन्दी" : "English"}
+                </span>
+                <h3 className="text-sm sm:text-base font-extrabold text-[#0B1B3D]">{topic}</h3>
+              </div>
+              <DualPdfButton title={topic} compact />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
