@@ -4,7 +4,7 @@ export interface BatchItem {
   slug: string;
   title: string;
   examTag: string;
-  batchType: "Foundation" | "Prelims Target" | "Mains Mentorship" | "Optional" | "Crash Course";
+  batchType: string;
   startDate: string;
   duration: string;
   mode: string;
@@ -16,7 +16,7 @@ export interface BatchItem {
   isPaid: boolean;
   priceInr: number;
   mrpInr: number;
-  status: "Admissions Open" | "Upcoming" | "Live Now";
+  status: string;
   syllabusPdfUrl: string;
   telegramGroupUrl: string;
   uploadedBy: string;

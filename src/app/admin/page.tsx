@@ -112,14 +112,14 @@ export default function AdminDashboardPage() {
   const [batches, setBatches] = useState<BatchItem[]>(DEFAULT_BATCHES);
   const [batchTitle, setBatchTitle] = useState("");
   const [batchExam, setBatchExam] = useState("UPSC");
-  const [batchType, setBatchType] = useState<BatchItem["batchType"]>("Foundation");
+  const [batchType, setBatchType] = useState<string>("Foundation");
   const [batchStartDate, setBatchStartDate] = useState("01 Dec 2026");
   const [batchDuration, setBatchDuration] = useState("12 Months");
   const [batchMedium, setBatchMedium] = useState<BatchItem["medium"]>("Bilingual (English & Hindi)");
   const [batchFaculty, setBatchFaculty] = useState("Saum Yadav & Team ECA");
   const [batchPrice, setBatchPrice] = useState("1499");
   const [batchMrp, setBatchMrp] = useState("2999");
-  const [batchStatus, setBatchStatus] = useState<BatchItem["status"]>("Admissions Open");
+  const [batchStatus, setBatchStatus] = useState<string>("Admissions Open");
   const [batchCover, setBatchCover] = useState("/covers/indian-polity.jpg");
   const [batchHighlightsText, setBatchHighlightsText] = useState(
     "Live + Recorded HD Classes\nBilingual Notes (English & Hindi PDFs)\nFull-Length CBT Mock Tests Included"
@@ -1094,31 +1094,29 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Exam</label>
-                  <select
+                  <input type="text" list="eca-exam-list" placeholder="Select or type exam..."
                     value={batchExam}
                     onChange={(e) => setBatchExam(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold"
-                  >
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold" /><datalist id="eca-exam-list">
                     {["UPSC", "UPPSC", "BPSC", "RPSC", "MPPSC", "HPSC", "JPSC", "UPSC / State PCS"].map(
                       (ex) => (
                         <option key={ex}>{ex}</option>
                       )
                     )}
-                  </select>
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Type</label>
-                  <select
+                  <input type="text" list="eca-type-list" placeholder="Select or type batch type..."
                     value={batchType}
-                    onChange={(e) => setBatchType(e.target.value as BatchItem["batchType"])}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold"
-                  >
+                    onChange={(e) => setBatchType(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold" /><datalist id="eca-type-list">
                     <option>Foundation</option>
                     <option>Prelims Target</option>
                     <option>Mains Mentorship</option>
                     <option>Optional</option>
                     <option>Crash Course</option>
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
@@ -1183,15 +1181,14 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
-                  <select
+                  <input type="text" list="eca-status-list" placeholder="Select or type status..."
                     value={batchStatus}
-                    onChange={(e) => setBatchStatus(e.target.value as BatchItem["status"])}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold"
-                  >
+                    onChange={(e) => setBatchStatus(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold" /><datalist id="eca-status-list">
                     <option>Admissions Open</option>
                     <option>Upcoming</option>
                     <option>Live Now</option>
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
@@ -1207,17 +1204,16 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Cover Image</label>
-                  <select
+                  <input type="text" list="eca-cover-list" placeholder="/covers/... or https://..."
                     value={batchCover}
                     onChange={(e) => setBatchCover(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"
-                  >
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs" /><datalist id="eca-cover-list">
                     {COVER_OPTIONS.map((c) => (
                       <option key={c} value={c}>
                         {c.replace("/covers/", "")}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
@@ -1461,11 +1457,10 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleAddContent} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Section</label>
-                <select
+                <input type="text" list="eca-section-list" placeholder="Select or type section..."
                   value={newSection}
                   onChange={(e) => setNewSection(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold"
-                >
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold" /><datalist id="eca-section-list">
                   <option>Daily Current Affairs</option>
                   <option>Test Series</option>
                   <option>Premium Notes</option>
@@ -1477,7 +1472,7 @@ export default function AdminDashboardPage() {
                   <option>Schemes</option>
                   <option>Toppers&apos; Copy</option>
                   <option>Syllabus</option>
-                </select>
+                </datalist>
               </div>
 
               <div>
