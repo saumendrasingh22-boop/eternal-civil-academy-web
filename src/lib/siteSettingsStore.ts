@@ -1,3 +1,4 @@
+import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 export interface SocialLinkItem {
   id: string;
   platform: string;
@@ -84,4 +85,5 @@ export function saveSiteSettings(settings: SiteContactAndSocialSettings) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   window.dispatchEvent(new Event("eca-settings-updated"));
+  fetch("/api/cms-state", { method: "POST", headers: getAdminAuthHeaders(), body: JSON.stringify({ key: "site_settings", value: settings }) }).catch(() => {});
 }
