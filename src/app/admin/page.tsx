@@ -68,6 +68,7 @@ import {
   AdminUserAccount,
   AdminPermissions,
 } from "@/lib/adminAccessStore";
+import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
 
@@ -138,6 +139,7 @@ export default function AdminDashboardPage() {
   const [customCtaHref, setCustomCtaHref] = useState("/batches");
   const [customCoverImg, setCustomCoverImg] = useState("/covers/important-articles.jpg");
   const [coverToast, setCoverToast] = useState("");
+  const [cloudSyncMsg, setCloudSyncMsg] = useState("");
 
   // Content Items with Ownership & Master Lock
   const [items, setItems] = useState(
@@ -1799,6 +1801,7 @@ export default function AdminDashboardPage() {
                 />
               <div className="md:col-span-3 bg-blue-50/70 border border-blue-200 rounded-xl p-3 space-y-2.5 mt-2"><div className="text-xs font-extrabold text-[#0B1B3D]">About Us: Academy Info & 3 Team Members (Footer)</div><textarea rows={2} placeholder="Write a short introduction about ETERNAL CIVIL ACADEMY..." value={(siteSettings.about && siteSettings.about.description) || ""} onChange={(e)=>{const cur=siteSettings.about||{description:"",team:[{name:"Saum Yadav",role:"Founder & Director"},{name:"",role:""},{name:"",role:""}]};handleSaveSiteSettings({...siteSettings,about:{...cur,description:e.target.value}});}} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white" /><div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">{[0,1,2].map((idx)=>{const cur=siteSettings.about||{description:"",team:[{name:"Saum Yadav",role:"Founder & Director"},{name:"",role:""},{name:"",role:""}]};const t=(cur.team&&cur.team[idx])||{name:"",role:""};return(<div key={idx} className="space-y-1.5 bg-white p-2.5 rounded-lg border border-slate-200"><input type="text" placeholder={"Member "+(idx+1)+" Name"} value={t.name} onChange={(e)=>{const next=[0,1,2].map(i=>(cur.team&&cur.team[i])||{name:"",role:""});next[idx]={...next[idx],name:e.target.value};handleSaveSiteSettings({...siteSettings,about:{...cur,team:next}});}} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold" /><input type="text" placeholder={"Member "+(idx+1)+" Role / Designation"} value={t.role} onChange={(e)=>{const next=[0,1,2].map(i=>(cur.team&&cur.team[i])||{name:"",role:""});next[idx]={...next[idx],role:e.target.value};handleSaveSiteSettings({...siteSettings,about:{...cur,team:next}});}} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs" /></div>);})}</div></div>
             </div>
+<div className="mt-4 pt-3 border-t border-slate-100 space-y-2"><button type="button" onClick={async()=>{setCloudSyncMsg("Syncing to Cloud...");saveSiteSettings(siteSettings);try{const res=await fetch("/api/cms-state",{method:"POST",headers:getAdminAuthHeaders(),body:JSON.stringify({key:"site_settings",value:siteSettings})});if(res.status===401){setCloudSyncMsg("⚠️ Session expired — Please Sign Out and Sign In again!");}else if(res.ok){setCloudSyncMsg("✅ Saved & Synced to Cloud (All devices updated!)");}else{setCloudSyncMsg("❌ Sync failed ("+res.status+")");}}catch{setCloudSyncMsg("❌ Network error while syncing");}}} className="w-full bg-[#0B1B3D] hover:bg-[#E60000] text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition">Save & Sync to Cloud (All Devices)</button>{cloudSyncMsg && <div className="text-xs font-bold text-center text-[#0B1B3D] bg-slate-100 rounded-lg py-1.5 px-2">{cloudSyncMsg}</div>}</div>
             </div>
           </div>
         </div>
