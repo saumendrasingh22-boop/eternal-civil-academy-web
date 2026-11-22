@@ -25,24 +25,24 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 shadow-md">
       {/* Tier 1: Primary Brand Identity Bar */}
       <div className="bg-[#0B1B3D] text-white border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <img
               src="/logo.jpg"
               alt="ETERNAL CIVIL ACADEMY"
-              className="h-11 md:h-14 w-auto rounded-lg border border-white/20 object-contain bg-white"
+              className="h-8 sm:h-11 md:h-14 w-auto shrink-0 rounded-lg border border-white/20 object-contain bg-white"
             />
             <div>
-              <div className="text-base sm:text-xl md:text-2xl font-extrabold tracking-wide text-white leading-none">
+              <div className="text-[13px] sm:text-xl md:text-2xl font-extrabold tracking-tight sm:tracking-wide text-white leading-tight whitespace-nowrap">
                 ETERNAL CIVIL ACADEMY
               </div>
-              <p className="text-[11px] sm:text-xs italic text-slate-300 mt-1 tracking-normal font-normal">
+              <p className="text-[10px] sm:text-xs italic text-slate-300 mt-0.5 tracking-normal font-normal whitespace-nowrap">
                 Your Success, Our Commitment
               </p>
             </div>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <GlobalSearchModal />
             <PwaInstaller />
 
