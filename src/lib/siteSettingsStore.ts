@@ -8,7 +8,7 @@ export interface SocialLinkItem {
 
 export interface SiteContactAndSocialSettings {
   socials: SocialLinkItem[];
-  contact: {
+  about?: { description: string; team: { name: string; role: string }[]; }; contact: {
     email: string;
     mobile: string; mobileContacts?: { label: string; number: string }[];
     whatsapp: string;
@@ -60,7 +60,7 @@ export const DEFAULT_SITE_SETTINGS: SiteContactAndSocialSettings = {
       active: true,
     },
   ],
-  contact: {
+  about: { description: "ETERNAL CIVIL ACADEMY is a dedicated UPSC & State PCS preparation platform offering structured batches, bilingual current affairs, CBT test series, and mentorship.", team: [{ name: "Saum Yadav", role: "Founder & Director" }, { name: "Team Member 2", role: "Academic Head" }, { name: "Team Member 3", role: "Test & Evaluation Lead" }] }, contact: {
     email: "support@eternalcivilacademy.com",
     mobile: "+91 98765 43210",
     whatsapp: "+91 98765 43210", mobileContacts: [{ label: "Batch & Admission Enquiry", number: "+91 98765 43210" }, { label: "Test Series & Notes Support", number: "" }, { label: "Technical & Payment Help", number: "" }],
