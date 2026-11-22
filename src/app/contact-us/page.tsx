@@ -41,18 +41,7 @@ export default function ContactUsPage() {
           </div>
         </a>
 
-        <a
-          href={`tel:${settings.contact.mobile}`}
-          className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-[#0B1B3D] transition"
-        >
-          <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0B1B3D] flex items-center justify-center mb-3">
-            <Phone className="w-5 h-5" />
-          </div>
-          <div className="text-xs font-extrabold uppercase text-slate-500">Mobile</div>
-          <div className="text-sm font-bold text-[#0B1B3D] mt-1">
-            {settings.contact.mobile}
-          </div>
-        </a>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm"><div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0B1B3D] flex items-center justify-center mb-3"><Phone className="w-5 h-5" /></div><div className="text-xs font-extrabold uppercase text-slate-500 mb-2">Mobile (Select Contact)</div><div className="space-y-2">{(settings.contact.mobileContacts && settings.contact.mobileContacts.some(m=>m.number.trim()) ? settings.contact.mobileContacts.filter(m=>m.number.trim()) : [{ label: "Primary Helpline", number: settings.contact.mobile }]).map((m, idx) => (<a key={idx} href={"tel:"+m.number} className="block rounded-xl border border-slate-200 hover:border-[#0B1B3D] hover:bg-slate-50 px-3 py-2 transition"><div className="text-sm font-bold text-[#0B1B3D]">{m.number}</div>{m.label && <div className="text-[11px] font-semibold text-slate-600">— {m.label}</div>}</a>))}</div></div>
 
         <a
           href={`https://wa.me/${cleanWhatsapp}`}

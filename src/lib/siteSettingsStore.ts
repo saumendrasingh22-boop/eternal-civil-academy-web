@@ -10,7 +10,7 @@ export interface SiteContactAndSocialSettings {
   socials: SocialLinkItem[];
   contact: {
     email: string;
-    mobile: string;
+    mobile: string; mobileContacts?: { label: string; number: string }[];
     whatsapp: string;
   };
 }
@@ -63,7 +63,7 @@ export const DEFAULT_SITE_SETTINGS: SiteContactAndSocialSettings = {
   contact: {
     email: "support@eternalcivilacademy.com",
     mobile: "+91 98765 43210",
-    whatsapp: "+91 98765 43210",
+    whatsapp: "+91 98765 43210", mobileContacts: [{ label: "Batch & Admission Enquiry", number: "+91 98765 43210" }, { label: "Test Series & Notes Support", number: "" }, { label: "Technical & Payment Help", number: "" }],
   },
 };
 

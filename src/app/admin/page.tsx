@@ -1781,7 +1781,8 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2"><div className="text-xs font-extrabold text-[#0B1B3D]">Contact Us: 3 Mobile Numbers + Name / Role</div><div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">{[0,1,2].map((idx)=>{const list=siteSettings.contact.mobileContacts||[{label:"Batch & Admission Enquiry",number:siteSettings.contact.mobile},{label:"Test Series & Notes Support",number:""},{label:"Technical & Payment Help",number:""}];const item=list[idx]||{label:"",number:""};return(<div key={idx} className="space-y-1.5 bg-white p-2.5 rounded-lg border border-slate-200"><input type="text" placeholder={"Option "+(idx+1)+" Name / Role"} value={item.label} onChange={(e)=>{const next=[0,1,2].map(i=>list[i]||{label:"",number:""});next[idx]={...next[idx],label:e.target.value};handleSaveSiteSettings({...siteSettings,contact:{...siteSettings.contact,mobileContacts:next}});}} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs" /><input type="text" placeholder={"Option "+(idx+1)+" Mobile (+91...)"} value={item.number} onChange={(e)=>{const next=[0,1,2].map(i=>list[i]||{label:"",number:""});next[idx]={...next[idx],number:e.target.value};handleSaveSiteSettings({...siteSettings,contact:{...siteSettings.contact,mobileContacts:next}});}} className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold" /></div>);})}</div></div>
+<div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   WhatsApp Number
                 </label>
