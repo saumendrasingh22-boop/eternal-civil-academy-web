@@ -30,10 +30,10 @@ export default function Navbar() {
             <img
               src="/logo.jpg"
               alt="ETERNAL CIVIL ACADEMY"
-              className="h-11 md:h-14 w-auto shrink-0 rounded-lg border border-white/20 object-contain bg-white"
+              className="h-10 sm:h-11 md:h-14 w-auto shrink-0 rounded-lg border border-white/20 object-contain bg-white"
             />
             <div>
-              <div className="text-base sm:text-xl md:text-2xl font-extrabold tracking-wide text-white leading-tight whitespace-nowrap">
+              <div className="text-[14.5px] sm:text-xl md:text-2xl font-extrabold tracking-normal sm:tracking-wide text-white leading-tight whitespace-nowrap">
                 ETERNAL CIVIL ACADEMY
               </div>
               <p className="text-[11px] sm:text-xs italic text-slate-300 mt-0.5 tracking-normal font-normal whitespace-nowrap">
