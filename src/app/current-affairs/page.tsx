@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
 import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
+import RichText from "@/components/RichText";
 import DualPdfButton from "@/components/DualPdfButton";
 import { Star, Languages, FileText } from "lucide-react";
 
@@ -109,7 +110,7 @@ export default function CurrentAffairsPage() {
                   <span className="text-slate-400 font-semibold">{item.date}</span>
                 </div>
                 <DualPdfButton
-                  title={loc.title}
+                  title={loc.title.replace(/\*\*/g, "")}
                   englishUrl={item.englishPdfUrl}
                   hindiUrl={item.hindiPdfUrl}
                   compact
@@ -118,7 +119,7 @@ export default function CurrentAffairsPage() {
 
               <Link href={`/current-affairs/${item.slug}?lang=${lang}`}>
                 <h2 className="text-lg sm:text-xl font-bold text-[#0B1B3D] hover:text-[#E60000] transition">
-                  {loc.title}
+                  <RichText text={loc.title} />
                 </h2>
               </Link>
 
@@ -126,7 +127,7 @@ export default function CurrentAffairsPage() {
                 <div className="text-xs font-extrabold text-[#0B1B3D] uppercase">
                   {lang === "hi" ? "खबरों में क्यों है (Why in News)" : "Why in News"}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-700 mt-1">{loc.whyInNews}</p>
+                <p className="text-xs sm:text-sm text-slate-700 mt-1"><RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" /></p>
               </div>
 
               <div className="mt-3 flex items-center justify-between pt-2">

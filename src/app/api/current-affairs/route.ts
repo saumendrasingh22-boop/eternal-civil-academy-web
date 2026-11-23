@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
       const { data } = await query;
       if (data && data.length > 0) {
-        liveArticles = data.map((row: any) => ({
+        liveArticles = data.filter((row: any) => row.title_hi && row.why_in_news_hi && Array.isArray(row.key_highlights_hi) && row.key_highlights_hi.length > 0 && !/[\u0900-\u097F]/.test(String(row.title || "")) && /[\u0900-\u097F]/.test(String(row.why_in_news_hi || ""))).map((row: any) => ({
           id: row.id,
           slug: row.slug,
           sectionType: row.section_type,

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { STATES_LIST, STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
 import { getLocalizedCa } from "@/lib/bilingualCaMap";
+import RichText from "@/components/RichText";
 import { loadNoCodeCms } from "@/lib/noCodeCmsStore";
 import DualPdfButton from "@/components/DualPdfButton";
 import { Languages } from "lucide-react";
@@ -110,14 +111,14 @@ export default function SchemesPage() {
                   <span className="bg-red-50 text-[#E60000] text-xs font-extrabold px-2.5 py-0.5 rounded">
                     {sc.stateName || "Central"} • {sc.examRelevance}
                   </span>
-                  <DualPdfButton title={loc.title} compact />
+                  <DualPdfButton title={loc.title.replace(/\*\*/g, "")} compact />
                 </div>
-                <Link href={`/current-affairs/${sc.slug}`}>
+                <Link href={`/current-affairs/${sc.slug}?lang=${lang}`}>
                   <h2 className="text-lg font-extrabold text-[#0B1B3D] hover:text-[#E60000]">
-                    {loc.title}
+                    <RichText text={loc.title} />
                   </h2>
                 </Link>
-                <p className="text-sm text-slate-700 mt-2">{loc.whyInNews}</p>
+                <p className="text-sm text-slate-700 mt-2"><RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" /></p>
               </div>
             );
           })

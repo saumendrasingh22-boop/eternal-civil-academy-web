@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import DualPdfButton from "@/components/DualPdfButton";
 import { Star, Languages } from "lucide-react";
 import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
+import RichText from "@/components/RichText";
 
 export default function CurrentAffairReader({
   article,
@@ -56,7 +57,7 @@ export default function CurrentAffairReader({
           </div>
 
           <DualPdfButton
-            title={loc.title}
+            title={loc.title.replace(/\*\*/g, "")}
             englishUrl={article.englishPdfUrl}
             hindiUrl={article.hindiPdfUrl}
           />
@@ -64,7 +65,7 @@ export default function CurrentAffairReader({
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0B1B3D] mt-4 leading-snug">
-        {loc.title}
+        <RichText text={loc.title} />
       </h1>
 
       {/* Section 1: Why in News */}
@@ -73,7 +74,7 @@ export default function CurrentAffairReader({
           {isHi ? "खबरों में क्यों है (Why in News)" : "Why in News"}
         </h2>
         <p className="text-sm sm:text-base text-slate-800 mt-1.5 leading-relaxed">
-          {loc.whyInNews}
+          <RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" />
         </p>
       </section>
 
@@ -84,7 +85,7 @@ export default function CurrentAffairReader({
         </h2>
         <ul className="mt-3 space-y-3 text-sm sm:text-base text-slate-800 list-disc pl-5 leading-relaxed">
           {loc.keyHighlights.map((point, idx) => (
-            <li key={idx}>{point}</li>
+            <li key={idx}><RichText text={point} boldClassName="font-bold text-[#0B1B3D]" /></li>
           ))}
         </ul>
       </section>
@@ -99,7 +100,7 @@ export default function CurrentAffairReader({
           {loc.prelimsFacts.map((fact, idx) => (
             <li key={idx} className="flex items-start gap-2 font-medium">
               <span className="text-[#E60000] font-extrabold shrink-0">★</span>
-              <span>{fact}</span>
+              <span><RichText text={fact} boldClassName="font-bold text-[#0B1B3D]" /></span>
             </li>
           ))}
         </ul>
@@ -111,7 +112,7 @@ export default function CurrentAffairReader({
           {isHi ? "मुख्य परीक्षा दृष्टिकोण (Mains Perspective)" : "Mains Perspective"}
         </h2>
         <p className="text-sm mt-1.5 leading-relaxed text-slate-100">
-          {loc.mainsPerspective}
+          <RichText text={loc.mainsPerspective} boldClassName="font-bold text-yellow-200" />
         </p>
       </section>
     </div>

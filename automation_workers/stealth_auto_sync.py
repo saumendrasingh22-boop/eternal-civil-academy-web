@@ -280,7 +280,7 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
         f"STRICT RULES:\n"
         f"- Do NOT include any external URLs, website names, or news agency names (no PIB/DD News/Akashvani/PTI).\n"
         f"- Return ONLY valid JSON with exact keys:\n"
-        f'  {{"title_hi": "Crisp pure Devanagari Hindi headline with important English exam keywords in brackets like (Keyword)", "why_in_news": "2-3 clear sentences explaining why this topic is in news", "why_in_news_hi": "2-3 clear sentences in pure standard Devanagari Hindi with key technical terms in English inside brackets ()", '
+        f'  {{"title_en": "Crisp pure English headline", "title_hi": "Crisp pure Devanagari Hindi headline with important English exam keywords in brackets like (Keyword)", "why_in_news": "2-3 clear sentences explaining why this topic is in news", "why_in_news_hi": "2-3 clear sentences in pure standard Devanagari Hindi with key technical terms in English inside brackets ()", '
         f'"key_highlights": ["Point 1 with bold-style label: detailed explanation", "Point 2...", "Point 3...", "Point 4..."], '
         f'"prelims_facts": ["Crisp Prelims fact 1", "Crisp Prelims fact 2", "Crisp Prelims fact 3", "Crisp Prelims fact 4"], '
         f'"key_highlights_hi": ["Point 1 in pure Hindi with key English terms in brackets ()", "Point 2 in pure Hindi", "Point 3 in pure Hindi"], "prelims_facts_hi": ["Fact 1 in pure Hindi with key English terms in brackets ()", "Fact 2 in pure Hindi", "Fact 3 in pure Hindi"], "mains_perspective": "2-3 sentence analytical Mains perspective", "mains_perspective_hi": "2-3 sentence analytical Mains perspective in pure Hindi"}}\n\n'
@@ -297,7 +297,7 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
             text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
             parsed = json.loads(text)
             if isinstance(parsed.get("why_in_news"), str) and isinstance(parsed.get("key_highlights"), list) and isinstance(parsed.get("prelims_facts"), list) and isinstance(parsed.get("mains_perspective"), str):
-                return {"why_in_news": strip_external_sources(parsed["why_in_news"]), "key_highlights": [strip_external_sources(str(x)) for x in parsed["key_highlights"][:5] if x], "prelims_facts": [strip_external_sources(str(x)) for x in parsed["prelims_facts"][:5] if x], "mains_perspective": strip_external_sources(parsed["mains_perspective"]), "title_hi": strip_external_sources(str(parsed.get("title_hi") or "")), "why_in_news_hi": strip_external_sources(str(parsed.get("why_in_news_hi") or "")), "key_highlights_hi": [strip_external_sources(str(x)) for x in (parsed.get("key_highlights_hi") or [])[:5] if x], "prelims_facts_hi": [strip_external_sources(str(x)) for x in (parsed.get("prelims_facts_hi") or [])[:5] if x], "mains_perspective_hi": strip_external_sources(str(parsed.get("mains_perspective_hi") or ""))}
+                return {"title_en": strip_external_sources(str(parsed.get("title_en") or "")), "why_in_news": strip_external_sources(parsed["why_in_news"]), "key_highlights": [strip_external_sources(str(x)) for x in parsed["key_highlights"][:5] if x], "prelims_facts": [strip_external_sources(str(x)) for x in parsed["prelims_facts"][:5] if x], "mains_perspective": strip_external_sources(parsed["mains_perspective"]), "title_hi": strip_external_sources(str(parsed.get("title_hi") or "")), "why_in_news_hi": strip_external_sources(str(parsed.get("why_in_news_hi") or "")), "key_highlights_hi": [strip_external_sources(str(x)) for x in (parsed.get("key_highlights_hi") or [])[:5] if x], "prelims_facts_hi": [strip_external_sources(str(x)) for x in (parsed.get("prelims_facts_hi") or [])[:5] if x], "mains_perspective_hi": strip_external_sources(str(parsed.get("mains_perspective_hi") or ""))}
         except Exception as e:
             print(f"[gemini EXC {mdl}] {e}")
         return None
@@ -447,15 +447,17 @@ def process_and_sync_item(
     combined_body = full_body if len(full_body) > len(desc) else desc
 
     structured = structure_with_free_gemini(title, combined_body, gs_tag, state_name)
-    if not structured:
-        structured = fallback_structure(title, combined_body, gs_tag, state_name)
+    if not structured or not structured.get("title_hi") or not structured.get("why_in_news_hi") or not structured.get("key_highlights_hi") or not structured.get("prelims_facts_hi") or not structured.get("mains_perspective_hi"):
+        return False
+    if not re.search(r"[\u0900-\u097F]", structured.get("why_in_news_hi", "")):
+        return False
 
     payload = {
         "slug": make_slug(state_name or "ca", title),
         "section_type": section_type,
         "state_name": state_name,
         "exam_relevance": gs_tag,
-        "title": title,
+        "title": (structured.get("title_en") if structured.get("title_en") and not re.search(r"[\u0900-\u097F]", structured.get("title_en", "")) else title),
         "why_in_news": structured["why_in_news"],
         "key_highlights": structured["key_highlights"],
         "prelims_facts": structured["prelims_facts"],
@@ -490,7 +492,7 @@ def run_full_stealth_sync():
             gs = detect_gs_paper(title, desc, feed["gs"])
             if process_and_sync_item(title, desc, link, sec, gs, None, seen_hashes):
                 national_synced += 1
-                time.sleep(0.5)
+                time.sleep(1.5)
 
     # 2. State-Specific Current Affairs (7 Key PCS States — Multi-Source RSS)
     for state_name, feed_urls in STATE_MULTI_FEEDS.items():
@@ -506,7 +508,7 @@ def run_full_stealth_sync():
                 if process_and_sync_item(title, desc, link, sec, "State Special", state_name, seen_hashes):
                     state_synced += 1
                     per_state_count += 1
-                    time.sleep(0.5)
+                    time.sleep(1.5)
 
     if (national_synced + state_synced) > 0 and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
         try:

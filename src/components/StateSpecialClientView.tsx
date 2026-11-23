@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
 import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
+import RichText from "@/components/RichText";
 import DualPdfButton from "@/components/DualPdfButton";
 import { Star, Languages } from "lucide-react";
 
@@ -89,22 +90,22 @@ export default function StateSpecialClientView({ stateName }: { stateName: strin
                       {stateName} • {news.date}
                     </span>
                     <DualPdfButton
-                      title={loc.title}
+                      title={loc.title.replace(/\*\*/g, "")}
                       englishUrl={news.englishPdfUrl}
                       hindiUrl={news.hindiPdfUrl}
                       compact
                     />
                   </div>
-                  <Link href={`/current-affairs/${news.slug}`}>
+                  <Link href={`/current-affairs/${news.slug}?lang=${lang}`}>
                     <h2 className="text-lg font-extrabold text-[#0B1B3D] hover:text-[#E60000]">
-                      {loc.title}
+                      <RichText text={loc.title} />
                     </h2>
                   </Link>
                   <div className="mt-2.5 bg-slate-50 border-l-4 border-[#0B1B3D] p-3 rounded-r-xl">
                     <div className="text-[11px] font-extrabold text-[#0B1B3D] uppercase">
                       {lang === "hi" ? "खबरों में क्यों है (Why in News)" : "Why in News"}
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-700 mt-1">{loc.whyInNews}</p>
+                    <p className="text-xs sm:text-sm text-slate-700 mt-1"><RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" /></p>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-700 flex items-center gap-1">
@@ -112,7 +113,7 @@ export default function StateSpecialClientView({ stateName }: { stateName: strin
                       {loc.prelimsFacts.length} Prelims Facts
                     </span>
                     <Link
-                      href={`/current-affairs/${news.slug}`}
+                      href={`/current-affairs/${news.slug}?lang=${lang}`}
                       className="text-xs font-extrabold text-[#E60000] hover:underline"
                     >
                       {lang === "hi" ? "पूरी व्याख्या पढ़ें →" : "Full Structured Analysis →"}
