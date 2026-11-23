@@ -109,7 +109,7 @@ export default function CurrentAffairsPage() {
                   )}
                   <span className="text-slate-400 font-semibold">{item.date}</span>
                 </div>
-                <DualPdfButton
+                <DualPdfButton article={item}
                   title={loc.title.replace(/\*\*/g, "")}
                   englishUrl={item.englishPdfUrl}
                   hindiUrl={item.hindiPdfUrl}

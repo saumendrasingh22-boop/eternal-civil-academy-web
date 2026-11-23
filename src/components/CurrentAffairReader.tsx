@@ -56,7 +56,7 @@ export default function CurrentAffairReader({
             </button>
           </div>
 
-          <DualPdfButton
+          <DualPdfButton article={article}
             title={loc.title.replace(/\*\*/g, "")}
             englishUrl={article.englishPdfUrl}
             hindiUrl={article.hindiPdfUrl}

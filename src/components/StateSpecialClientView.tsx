@@ -89,7 +89,7 @@ export default function StateSpecialClientView({ stateName }: { stateName: strin
                     <span className="bg-red-50 text-[#E60000] text-xs font-extrabold px-2.5 py-0.5 rounded">
                       {stateName} • {news.date}
                     </span>
-                    <DualPdfButton
+                    <DualPdfButton article={news}
                       title={loc.title.replace(/\*\*/g, "")}
                       englishUrl={news.englishPdfUrl}
                       hindiUrl={news.hindiPdfUrl}

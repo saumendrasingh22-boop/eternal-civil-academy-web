@@ -111,7 +111,7 @@ export default function SchemesPage() {
                   <span className="bg-red-50 text-[#E60000] text-xs font-extrabold px-2.5 py-0.5 rounded">
                     {sc.stateName || "Central"} • {sc.examRelevance}
                   </span>
-                  <DualPdfButton title={loc.title.replace(/\*\*/g, "")} compact />
+                  <DualPdfButton article={sc} title={loc.title.replace(/\*\*/g, "")} compact />
                 </div>
                 <Link href={`/current-affairs/${sc.slug}?lang=${lang}`}>
                   <h2 className="text-lg font-extrabold text-[#0B1B3D] hover:text-[#E60000]">
