@@ -15,6 +15,7 @@ export default function CurrentAffairsPage() {
   );
 
   useEffect(() => {
+    try { const sl = new URLSearchParams(window.location.search).get("lang") || window.localStorage.getItem("eca_ca_lang"); if (sl === "hi" || sl === "en") setLang(sl); } catch {}
     fetch("/api/current-affairs")
       .then((r) => r.json())
       .then((d) => {
@@ -42,7 +43,7 @@ export default function CurrentAffairsPage() {
           <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-xs text-xs font-extrabold">
             <Languages className="w-3.5 h-3.5 text-[#0B1B3D] mx-1.5" />
             <button
-              onClick={() => setLang("en")}
+              onClick={() => { setLang("en"); try { window.localStorage.setItem("eca_ca_lang", "en"); } catch {} }}
               className={`px-3 py-1.5 rounded-lg transition ${
                 lang === "en" ? "bg-[#0B1B3D] text-white" : "text-slate-700 hover:bg-slate-50"
               }`}
@@ -50,7 +51,7 @@ export default function CurrentAffairsPage() {
               English
             </button>
             <button
-              onClick={() => setLang("hi")}
+              onClick={() => { setLang("hi"); try { window.localStorage.setItem("eca_ca_lang", "hi"); } catch {} }}
               className={`px-3 py-1.5 rounded-lg transition ${
                 lang === "hi" ? "bg-[#E60000] text-white" : "text-slate-700 hover:bg-slate-50"
               }`}
@@ -115,7 +116,7 @@ export default function CurrentAffairsPage() {
                 />
               </div>
 
-              <Link href={`/current-affairs/${item.slug}`}>
+              <Link href={`/current-affairs/${item.slug}?lang=${lang}`}>
                 <h2 className="text-lg sm:text-xl font-bold text-[#0B1B3D] hover:text-[#E60000] transition">
                   {loc.title}
                 </h2>
@@ -134,7 +135,7 @@ export default function CurrentAffairsPage() {
                   {loc.prelimsFacts.length} Prelims Facts
                 </span>
                 <Link
-                  href={`/current-affairs/${item.slug}`}
+                  href={`/current-affairs/${item.slug}?lang=${lang}`}
                   className="text-xs font-extrabold text-[#E60000] hover:underline"
                 >
                   {lang === "hi" ? "पूरी व्याख्या पढ़ें →" : "Full Structured Analysis →"}

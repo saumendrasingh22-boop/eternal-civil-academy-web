@@ -280,10 +280,10 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
         f"STRICT RULES:\n"
         f"- Do NOT include any external URLs, website names, or news agency names (no PIB/DD News/Akashvani/PTI).\n"
         f"- Return ONLY valid JSON with exact keys:\n"
-        f'  {{"title_hi": "Crisp pure Devanagari Hindi headline", "why_in_news": "2-3 clear sentences explaining why this topic is in news", "why_in_news_hi": "2-3 clear sentences in pure standard Devanagari Hindi", '
+        f'  {{"title_hi": "Crisp pure Devanagari Hindi headline with important English exam keywords in brackets like (Keyword)", "why_in_news": "2-3 clear sentences explaining why this topic is in news", "why_in_news_hi": "2-3 clear sentences in pure standard Devanagari Hindi with key technical terms in English inside brackets ()", '
         f'"key_highlights": ["Point 1 with bold-style label: detailed explanation", "Point 2...", "Point 3...", "Point 4..."], '
         f'"prelims_facts": ["Crisp Prelims fact 1", "Crisp Prelims fact 2", "Crisp Prelims fact 3", "Crisp Prelims fact 4"], '
-        f'"key_highlights_hi": ["Point 1 in pure Hindi", "Point 2 in pure Hindi", "Point 3 in pure Hindi"], "prelims_facts_hi": ["Fact 1 in pure Hindi", "Fact 2 in pure Hindi", "Fact 3 in pure Hindi"], "mains_perspective": "2-3 sentence analytical Mains perspective", "mains_perspective_hi": "2-3 sentence analytical Mains perspective in pure Hindi"}}\n\n'
+        f'"key_highlights_hi": ["Point 1 in pure Hindi with key English terms in brackets ()", "Point 2 in pure Hindi", "Point 3 in pure Hindi"], "prelims_facts_hi": ["Fact 1 in pure Hindi with key English terms in brackets ()", "Fact 2 in pure Hindi", "Fact 3 in pure Hindi"], "mains_perspective": "2-3 sentence analytical Mains perspective", "mains_perspective_hi": "2-3 sentence analytical Mains perspective in pure Hindi"}}\n\n'
         f"HEADLINE: {title}\n"
         f"DETAILS: {raw_body[:2400]}"
     )

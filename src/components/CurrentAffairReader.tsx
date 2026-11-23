@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DualPdfButton from "@/components/DualPdfButton";
 import { Star, Languages } from "lucide-react";
 import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
@@ -11,6 +11,9 @@ export default function CurrentAffairReader({
   article: BilingualCurrentAffairItem;
 }) {
   const [lang, setLang] = useState<"en" | "hi">("en");
+  useEffect(() => {
+    try { const sl = new URLSearchParams(window.location.search).get("lang") || window.localStorage.getItem("eca_ca_lang"); if (sl === "hi" || sl === "en") setLang(sl); } catch {}
+  }, []);
   const loc = getLocalizedCa(article, lang);
   const isHi = lang === "hi";
 
@@ -34,7 +37,7 @@ export default function CurrentAffairReader({
             <Languages className="w-3.5 h-3.5 text-[#0B1B3D] mx-1.5" />
             <button
               type="button"
-              onClick={() => setLang("en")}
+              onClick={() => { setLang("en"); try { window.localStorage.setItem("eca_ca_lang", "en"); } catch {} }}
               className={`px-2.5 py-1 rounded-lg transition ${
                 lang === "en" ? "bg-[#0B1B3D] text-white" : "text-slate-700"
               }`}
@@ -43,7 +46,7 @@ export default function CurrentAffairReader({
             </button>
             <button
               type="button"
-              onClick={() => setLang("hi")}
+              onClick={() => { setLang("hi"); try { window.localStorage.setItem("eca_ca_lang", "hi"); } catch {} }}
               className={`px-2.5 py-1 rounded-lg transition ${
                 lang === "hi" ? "bg-[#E60000] text-white" : "text-slate-700"
               }`}
