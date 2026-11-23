@@ -34,7 +34,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 REQ_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; EternalCivilAcademyBot/2.0; +https://eternalcivilacademy.com)",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     "Accept": "application/rss+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8",
 }
 
@@ -383,8 +383,9 @@ def push_to_website_or_supabase(table: str, payload: dict) -> bool:
             )
             if res.status_code == 200:
                 return True
-        except Exception:
-            pass
+            print(f"[bot-sync ERR] {res.status_code}: {res.text[:180]}")
+        except Exception as e:
+            print(f"[bot-sync EXC] {e}")
 
     # 2. Direct Supabase REST Upsert Fallback (100% Free Tier compatible)
     if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
@@ -401,9 +402,11 @@ def push_to_website_or_supabase(table: str, payload: dict) -> bool:
                 },
                 timeout=15,
             )
-            return res.status_code in (200, 201)
-        except Exception:
-            pass
+            if res.status_code in (200, 201):
+                return True
+            print(f"[supabase ERR] {res.status_code}: {res.text[:180]}")
+        except Exception as e:
+            print(f"[supabase EXC] {e}")
 
     return False
 
