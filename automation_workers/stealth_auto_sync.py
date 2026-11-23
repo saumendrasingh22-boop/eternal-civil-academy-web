@@ -27,12 +27,10 @@ from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 
-WEBSITE_SYNC_URL = os.getenv("ECA_WEBSITE_API_URL", "https://eternalcivilacademy.com/api/bot-sync").strip().strip(chr(34)+chr(39)+chr(96))
-if WEBSITE_SYNC_URL and not WEBSITE_SYNC_URL.startswith("http"): WEBSITE_SYNC_URL = "https://" + WEBSITE_SYNC_URL
+WEBSITE_SYNC_URL = next((w.strip(chr(34)+chr(39)+chr(96)) for w in os.getenv("ECA_WEBSITE_API_URL","https://eternalcivilacademy.com/api/bot-sync").replace("["," ").replace("]"," ").replace("("," ").replace(")"," ").split() if "http" in w),"")
 BOT_API_SECRET = os.getenv("BOT_API_SECRET", "eca-secret-sync-token-2026").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().strip(chr(34)+chr(39)+chr(96))
-if SUPABASE_URL and not SUPABASE_URL.startswith("http"): SUPABASE_URL = "https://" + SUPABASE_URL
+SUPABASE_URL = next((w.strip(chr(34)+chr(39)+chr(96)) for w in os.getenv("SUPABASE_URL","").replace("["," ").replace("]"," ").replace("("," ").replace(")"," ").split() if "http" in w),"")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 REQ_HEADERS = {
