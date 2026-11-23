@@ -254,7 +254,7 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
         f"HEADLINE: {title}\n"
         f"DETAILS: {raw_body[:2400]}"
     )
-    for mdl in ("gemini-2.5-flash","gemini-2.0-flash"):
+    for mdl in ("gemini-3.5-flash-lite","gemini-3.6-flash","gemini-3.8-flash","gemini-flash-latest"):
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{mdl}:generateContent?key={GEMINI_API_KEY}"
         try:
             res = requests.post(endpoint, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.25, "responseMimeType": "application/json"}}, timeout=20)
