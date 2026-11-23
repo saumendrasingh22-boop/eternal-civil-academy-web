@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
@@ -27,7 +28,9 @@ export async function GET(req: NextRequest) {
 
       const { data } = await query;
       if (data && data.length > 0) {
-        liveArticles = data.filter((row: any) => row.title_hi && row.why_in_news_hi && Array.isArray(row.key_highlights_hi) && row.key_highlights_hi.length > 0 && !/[\u0900-\u097F]/.test(String(row.title || "")) && /[\u0900-\u097F]/.test(String(row.why_in_news_hi || ""))).map((row: any) => ({
+        const hasHi = (v: unknown) => /[\u0900-\u097F]/.test(String(v || ""));
+      const isCleanBilingual = (r: any) => !hasHi(r.title) && !hasHi(r.why_in_news) && hasHi(r.title_hi) && hasHi(r.why_in_news_hi) && hasHi(r.mains_perspective_hi) && Array.isArray(r.key_highlights_hi) && r.key_highlights_hi.length > 0 && hasHi(r.key_highlights_hi[0]) && Array.isArray(r.prelims_facts_hi) && r.prelims_facts_hi.length > 0 && hasHi(r.prelims_facts_hi[0]);
+      liveArticles = data.filter(isCleanBilingual).map((row: any) => ({
           id: row.id,
           slug: row.slug,
           sectionType: row.section_type,

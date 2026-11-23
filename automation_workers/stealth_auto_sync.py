@@ -477,6 +477,29 @@ def process_and_sync_item(
     return ok
 
 
+def purge_incomplete_rows():
+    if not (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY):
+        return
+    hdr = {"apikey": SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"}
+    try:
+        r = requests.get(SUPABASE_URL.rstrip(chr(47))+"/rest/v1/current_affairs?select=id,title,why_in_news,title_hi,why_in_news_hi,key_highlights_hi,prelims_facts_hi,mains_perspective_hi", headers=hdr, timeout=20)
+        if r.status_code != 200:
+            return
+        has_hi = lambda v: bool(re.search(r"[\u0900-\u097F]", str(v or "")))
+        bad_ids = []
+        for row in r.json():
+            kh = row.get("key_highlights_hi") or []
+            pf = row.get("prelims_facts_hi") or []
+            ok = (not has_hi(row.get("title")) and not has_hi(row.get("why_in_news")) and has_hi(row.get("title_hi")) and has_hi(row.get("why_in_news_hi")) and has_hi(row.get("mains_perspective_hi")) and len(kh)>0 and has_hi(kh[0]) and len(pf)>0 and has_hi(pf[0]))
+            if not ok and row.get("id"):
+                bad_ids.append(row["id"])
+        for bid in bad_ids:
+            requests.delete(SUPABASE_URL.rstrip(chr(47))+f"/rest/v1/current_affairs?id=eq.{bid}", headers=hdr, timeout=10)
+        if bad_ids:
+            print(f"[Cleanup] Purged {len(bad_ids)} old incomplete/mixed articles from Supabase.")
+    except Exception as e:
+        print(f"[Cleanup ERR] {e}")
+
 def run_full_stealth_sync():
     seen_hashes = load_seen_hashes()
     national_synced = 0
