@@ -7,17 +7,25 @@ import BookmarkButton from "@/components/BookmarkButton";
 import CurrentAffairReader from "@/components/CurrentAffairReader";
 import { ArrowLeft, GraduationCap } from "lucide-react";
 
+import { createClient } from "@supabase/supabase-js";
+import { BilingualCurrentAffairItem } from "@/lib/bilingualCaMap";
+export const dynamic = "force-dynamic";
+async function fetchArticleBySlug(slug: string): Promise<BilingualCurrentAffairItem> {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    try {
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      const { data } = await sb.from("current_affairs").select("*").eq("slug", slug).single();
+      if (data) {
+        return { id: data.id, slug: data.slug, sectionType: data.section_type, stateName: data.state_name || undefined, examRelevance: data.exam_relevance || "GS-2", title: data.title, titleHi: data.title_hi || undefined, whyInNews: data.why_in_news, whyInNewsHi: data.why_in_news_hi || undefined, keyHighlights: Array.isArray(data.key_highlights) ? data.key_highlights : [], keyHighlightsHi: Array.isArray(data.key_highlights_hi) ? data.key_highlights_hi : undefined, prelimsFacts: Array.isArray(data.prelims_facts) ? data.prelims_facts : [], prelimsFactsHi: Array.isArray(data.prelims_facts_hi) ? data.prelims_facts_hi : undefined, mainsPerspective: data.mains_perspective || "", mainsPerspectiveHi: data.mains_perspective_hi || undefined, date: data.published_date || new Date().toISOString().slice(0, 10), englishPdfUrl: data.english_pdf_url || "#download-english-ca", hindiPdfUrl: data.hindi_pdf_url || "#download-hindi-ca", uploadedBy: data.uploaded_by || "auto_sync", isLocked: Boolean(data.is_locked) };
+      }
+    } catch {}
+  }
+  return STRUCTURED_CURRENT_AFFAIRS.find((a) => a.slug === slug) || STRUCTURED_CURRENT_AFFAIRS[0];
+}
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://eternalcivilacademy.com").replace(/\/$/, "");
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const article =
-    STRUCTURED_CURRENT_AFFAIRS.find((a) => a.slug === params.slug) ||
-    STRUCTURED_CURRENT_AFFAIRS[0];
-
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const article = await fetchArticleBySlug(params.slug);
   const desc = article.whyInNews.slice(0, 158);
   const url = `${siteUrl}/current-affairs/${article.slug}`;
 
@@ -36,11 +44,8 @@ export async function generateMetadata({
   };
 }
 
-export default function CurrentAffairDetailPage({ params }: { params: { slug: string } }) {
-  const article =
-    STRUCTURED_CURRENT_AFFAIRS.find((a) => a.slug === params.slug) ||
-    STRUCTURED_CURRENT_AFFAIRS[0];
-
+export default async function CurrentAffairDetailPage({ params }: { params: { slug: string } }) {
+  const article = await fetchArticleBySlug(params.slug);
   const relatedArticles = STRUCTURED_CURRENT_AFFAIRS.filter((a) => a.slug !== article.slug).slice(
     0,
     3

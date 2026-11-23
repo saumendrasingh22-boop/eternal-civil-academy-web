@@ -29,7 +29,7 @@ from bs4 import BeautifulSoup
 
 WEBSITE_SYNC_URL = next((w.strip(chr(34)+chr(39)+chr(96)) for w in os.getenv("ECA_WEBSITE_API_URL","https://eternalcivilacademy.com/api/bot-sync").replace("["," ").replace("]"," ").replace("("," ").replace(")"," ").split() if "http" in w),"")
 BOT_API_SECRET = os.getenv("BOT_API_SECRET", "eca-secret-sync-token-2026").strip()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip().strip(chr(34)+chr(39)+chr(96))
 SUPABASE_URL = next((w.strip(chr(34)+chr(39)+chr(96)) for w in os.getenv("SUPABASE_URL","").replace("["," ").replace("]"," ").replace("("," ").replace(")"," ").split() if "http" in w),"")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
@@ -254,40 +254,20 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
         f"HEADLINE: {title}\n"
         f"DETAILS: {raw_body[:2400]}"
     )
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-    try:
-        res = requests.post(
-            endpoint,
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.25, "responseMimeType": "application/json"},
-            },
-            timeout=20,
-        )
-        if res.status_code != 200:
-            return None
-        text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-        parsed = json.loads(text)
-        if (
-            isinstance(parsed.get("why_in_news"), str)
-            and isinstance(parsed.get("key_highlights"), list)
-            and isinstance(parsed.get("prelims_facts"), list)
-            and isinstance(parsed.get("mains_perspective"), str)
-        ):
-            return {
-                "why_in_news": strip_external_sources(parsed["why_in_news"]),
-                "key_highlights": [strip_external_sources(str(x)) for x in parsed["key_highlights"][:5] if x],
-                "prelims_facts": [strip_external_sources(str(x)) for x in parsed["prelims_facts"][:5] if x],
-                "mains_perspective": strip_external_sources(parsed["mains_perspective"]),
-                "title_hi": strip_external_sources(str(parsed.get("title_hi") or "")),
-                "why_in_news_hi": strip_external_sources(str(parsed.get("why_in_news_hi") or "")),
-                "key_highlights_hi": [strip_external_sources(str(x)) for x in (parsed.get("key_highlights_hi") or [])[:5] if x],
-                "prelims_facts_hi": [strip_external_sources(str(x)) for x in (parsed.get("prelims_facts_hi") or [])[:5] if x],
-                "mains_perspective_hi": strip_external_sources(str(parsed.get("mains_perspective_hi") or "")),
-            }
-    except Exception:
+    for mdl in ("gemini-2.5-flash","gemini-2.0-flash"):
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{mdl}:generateContent?key={GEMINI_API_KEY}"
+        try:
+            res = requests.post(endpoint, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.25, "responseMimeType": "application/json"}}, timeout=20)
+            if res.status_code != 200:
+                print(f"[gemini ERR {mdl}] {res.status_code}: {res.text[:140]}")
+                continue
+            text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+            parsed = json.loads(text)
+            if isinstance(parsed.get("why_in_news"), str) and isinstance(parsed.get("key_highlights"), list) and isinstance(parsed.get("prelims_facts"), list) and isinstance(parsed.get("mains_perspective"), str):
+                return {"why_in_news": strip_external_sources(parsed["why_in_news"]), "key_highlights": [strip_external_sources(str(x)) for x in parsed["key_highlights"][:5] if x], "prelims_facts": [strip_external_sources(str(x)) for x in parsed["prelims_facts"][:5] if x], "mains_perspective": strip_external_sources(parsed["mains_perspective"]), "title_hi": strip_external_sources(str(parsed.get("title_hi") or "")), "why_in_news_hi": strip_external_sources(str(parsed.get("why_in_news_hi") or "")), "key_highlights_hi": [strip_external_sources(str(x)) for x in (parsed.get("key_highlights_hi") or [])[:5] if x], "prelims_facts_hi": [strip_external_sources(str(x)) for x in (parsed.get("prelims_facts_hi") or [])[:5] if x], "mains_perspective_hi": strip_external_sources(str(parsed.get("mains_perspective_hi") or ""))}
+        except Exception as e:
+            print(f"[gemini EXC {mdl}] {e}")
         return None
-    return None
 
 
 def fallback_structure(title: str, body: str, exam_relevance: str, state_name: str | None = None) -> dict:
