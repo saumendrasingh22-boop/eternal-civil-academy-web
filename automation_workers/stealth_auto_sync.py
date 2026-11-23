@@ -508,6 +508,11 @@ def run_full_stealth_sync():
                     per_state_count += 1
                     time.sleep(0.5)
 
+    if (national_synced + state_synced) > 0 and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        try:
+            requests.delete(SUPABASE_URL.rstrip(chr(47))+"/rest/v1/current_affairs?title_hi=is.null", headers={"apikey": SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"}, timeout=15)
+        except Exception:
+            pass
     save_seen_hashes(seen_hashes)
     print(
         f"[ETERNAL CIVIL ACADEMY] Auto-Sync Completed | National/Schemes: {national_synced} | "
