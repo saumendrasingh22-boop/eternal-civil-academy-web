@@ -294,8 +294,8 @@ export default function MaterialPage() {
                       )}
                       <DualPdfButton
                         title={book.title}
-                        englishUrl={book.englishPdfUrl}
-                        hindiUrl={book.hindiPdfUrl}
+                        englishUrl={book.isPaid && unlockState.utr && !String(book.englishPdfUrl||"").startsWith("http") && !String(book.englishPdfUrl||"").startsWith("#") ? `/api/premium-download?file=${encodeURIComponent(book.englishPdfUrl)}&itemId=${encodeURIComponent(book.id)}&utr=${encodeURIComponent(unlockState.utr)}` : book.englishPdfUrl}
+                        hindiUrl={book.isPaid && unlockState.utr && !String(book.hindiPdfUrl||"").startsWith("http") && !String(book.hindiPdfUrl||"").startsWith("#") ? `/api/premium-download?file=${encodeURIComponent(book.hindiPdfUrl)}&itemId=${encodeURIComponent(book.id)}&utr=${encodeURIComponent(unlockState.utr)}` : book.hindiPdfUrl}
                         compact
                       />
                     </div>

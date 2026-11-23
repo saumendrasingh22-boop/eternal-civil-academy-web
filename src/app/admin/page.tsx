@@ -1519,14 +1519,14 @@ export default function AdminDashboardPage() {
                 </div>
                 <input
                   type="url"
-                  placeholder="English PDF URL (https://...)"
+                  placeholder="English PDF URL (https://... OR filename.pdf from premium-pdfs)"
                   value={englishPdfLink}
                   onChange={(e) => setEnglishPdfLink(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white"
                 />
                 <input
                   type="url"
-                  placeholder="Hindi PDF URL (https://...)"
+                  placeholder="Hindi PDF URL (https://... OR filename-hi.pdf from premium-pdfs)"
                   value={hindiPdfLink}
                   onChange={(e) => setHindiPdfLink(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white"
