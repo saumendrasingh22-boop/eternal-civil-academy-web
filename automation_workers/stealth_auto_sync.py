@@ -236,6 +236,39 @@ def fetch_article_body_text(link: str) -> str:
         return ""
 
 
+ACTIVE_GEMINI_MODELS = None
+def get_active_gemini_models():
+    global ACTIVE_GEMINI_MODELS
+    if ACTIVE_GEMINI_MODELS is not None:
+        return ACTIVE_GEMINI_MODELS
+    fallback = ["gemini-flash-latest","gemini-3.5-flash-lite","gemini-3.6-flash","gemini-3.8-flash"]
+    if not GEMINI_API_KEY:
+        ACTIVE_GEMINI_MODELS = fallback
+        return ACTIVE_GEMINI_MODELS
+    try:
+        r = requests.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}", timeout=15)
+        if r.status_code == 200:
+            found = []
+            for m in r.json().get("models", []):
+                name = (m.get("name") or "").replace("models/","")
+                methods = m.get("supportedGenerationMethods") or []
+                low = name.lower()
+                if "generateContent" in methods and "flash" in low and not any(x in low for x in ("tts","image","audio","transcribe","live","omni","preview")):
+                    found.append(name)
+            lites = [x for x in found if "flash-lite" in x]
+            others = [x for x in found if "flash-lite" not in x]
+            ordered = sorted(lites, reverse=True) + sorted(others, reverse=True)
+            if "gemini-flash-latest" not in ordered:
+                ordered.append("gemini-flash-latest")
+            if ordered:
+                ACTIVE_GEMINI_MODELS = ordered[:5]
+                print(f"[Gemini Auto-Discovery] Using models: {ACTIVE_GEMINI_MODELS}")
+                return ACTIVE_GEMINI_MODELS
+    except Exception as e:
+        print(f"[Gemini Auto-Discovery ERR] {e}")
+    ACTIVE_GEMINI_MODELS = fallback
+    return ACTIVE_GEMINI_MODELS
+
 def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, state_name: str | None) -> dict | None:
     """Uses Gemini Free Tier API when GEMINI_API_KEY is configured."""
     if not GEMINI_API_KEY:
@@ -254,7 +287,7 @@ def structure_with_free_gemini(title: str, raw_body: str, exam_relevance: str, s
         f"HEADLINE: {title}\n"
         f"DETAILS: {raw_body[:2400]}"
     )
-    for mdl in ("gemini-3.5-flash-lite","gemini-3.6-flash","gemini-3.8-flash","gemini-flash-latest"):
+    for mdl in get_active_gemini_models():
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{mdl}:generateContent?key={GEMINI_API_KEY}"
         try:
             res = requests.post(endpoint, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.25, "responseMimeType": "application/json"}}, timeout=20)
