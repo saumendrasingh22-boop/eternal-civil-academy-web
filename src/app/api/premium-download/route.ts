@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data, error } = await supabase.storage
-    .from("premium-pdfs")
+    .from("PAID AND PREMIUM STORAGE")
     .createSignedUrl(filePath, 60);
 
   if (error || !data?.signedUrl) {
