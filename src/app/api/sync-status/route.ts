@@ -29,14 +29,15 @@ function getNextFourHourCronUtc(): {
 } {
   const now = new Date();
   const next = new Date(now.getTime());
-  next.setUTCMinutes(0, 0, 0);
+  next.setUTCMinutes(17, 0, 0);
   const currentHour = next.getUTCHours();
-  const nextSlotHour = Math.floor(currentHour / 4) * 4 + 4;
+  let nextSlotHour = Math.floor(currentHour / 4) * 4;
+  if (nextSlotHour < currentHour || (nextSlotHour === currentHour && now.getUTCMinutes() >= 17)) nextSlotHour += 4;
   if (nextSlotHour >= 24) {
     next.setUTCDate(next.getUTCDate() + 1);
-    next.setUTCHours(0, 0, 0, 0);
+    next.setUTCHours(0, 17, 0, 0);
   } else {
-    next.setUTCHours(nextSlotHour, 0, 0, 0);
+    next.setUTCHours(nextSlotHour, 17, 0, 0);
   }
   const diffMs = Math.max(0, next.getTime() - now.getTime());
   return {
@@ -137,7 +138,7 @@ export async function GET() {
       );
       const { data, count } = await supabase
         .from("current_affairs")
-        .select("slug, title_en, title_hi, category, created_at", {
+        .select("slug, title, title_hi, section_type, created_at", {
           count: "exact",
         })
         .order("created_at", { ascending: false })
@@ -148,8 +149,8 @@ export async function GET() {
         lastArticleIst = formatIst(data[0].created_at);
         recentArticles = data.map((row: any) => ({
           slug: row.slug || "",
-          title: row.title_en || row.title_hi || "Untitled Article",
-          category: row.category || "National",
+          title: row.title || row.title_hi || "Untitled Article",
+          category: row.section_type || "National",
           createdIst: formatIst(row.created_at),
         }));
       }
@@ -180,7 +181,7 @@ export async function GET() {
     checkedAtIst: formatIst(new Date().toISOString()),
     actionsUrl: `https://github.com/${repo}/actions/workflows/${workflowFile}`,
     scheduleText:
-      "Every 4 Hours (05:30 AM, 09:30 AM, 01:30 PM, 05:30 PM, 09:30 PM, 01:30 AM IST)",
+      "Every 4 Hours (05:47 AM, 09:47 AM, 01:47 PM, 05:47 PM, 09:47 PM, 01:47 AM IST)",
     nextSchedule,
     latestRun,
     lastSuccessRun,

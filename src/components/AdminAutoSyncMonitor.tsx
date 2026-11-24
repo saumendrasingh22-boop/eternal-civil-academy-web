@@ -255,7 +255,7 @@ export default function AdminAutoSyncMonitor() {
               : ""}
           </div>
           <div className="mt-0.5 text-[10px] text-slate-500">
-            GitHub Cron: 05:30, 09:30, 13:30, 17:30, 21:30, 01:30 IST
+            GitHub Cron: 05:47, 09:47, 13:47, 17:47, 21:47, 01:47 IST
           </div>
         </div>
 

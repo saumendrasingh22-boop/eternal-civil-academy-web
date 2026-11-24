@@ -3,7 +3,7 @@ name: ECA 24x7 Free National & State Current Affairs Auto-Sync
 on:
   schedule:
     # Runs automatically every 4 hours forever (100% Free & Unlimited on public GitHub Actions)
-    - cron: "0 */4 * * *"
+    - cron: "17 */4 * * *"
   workflow_dispatch:
 
 concurrency:
