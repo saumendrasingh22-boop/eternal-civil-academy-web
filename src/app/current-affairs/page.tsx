@@ -65,6 +65,13 @@ export default function CurrentAffairsPage() {
 
           {/* Dedicated Essay Material Shortcut -> Material Section */}
           <Link
+            href="/material?tab=daily-pdf"
+            className="inline-flex items-center gap-1.5 bg-[#0B1B3D] hover:bg-[#E60000] text-white text-xs font-extrabold px-3.5 py-2 rounded-xl transition"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Daily PDF Archive</span>
+          </Link>
+          <Link
             href="/material?tab=essay-material"
             className="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 text-xs font-extrabold px-3.5 py-2 rounded-xl transition"
           >

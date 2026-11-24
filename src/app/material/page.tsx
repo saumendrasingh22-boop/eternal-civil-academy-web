@@ -10,12 +10,13 @@ import {
 import { loadPremiumBooks } from "@/lib/premiumBooksStore";
 import { getItemUnlockState } from "@/lib/paymentOrdersStore";
 import DualPdfButton from "@/components/DualPdfButton";
+import DailyPdfArchiveSection from "@/components/DailyPdfArchiveSection";
 import UpiUnlockModal from "@/components/UpiUnlockModal";
 import { CheckCircle2, Languages } from "lucide-react";
 
 export default function MaterialPage() {
   const [subTab, setSubTab] = useState<
-    "ncert-books" | "ncert-crux" | "editorial" | "essay-material" | "premium-notes"
+    "ncert-books" | "ncert-crux" | "editorial" | "daily-pdf" | "essay-material" | "premium-notes"
   >("ncert-books");
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [selectedSubject, setSelectedSubject] = useState<string>("History");
@@ -29,6 +30,7 @@ export default function MaterialPage() {
       const tab = params.get("tab");
       if (tab === "premium-notes") setSubTab("premium-notes");
       if (tab === "essay-material") setSubTab("essay-material");
+      if (tab === "daily-pdf") setSubTab("daily-pdf");
     }
     const handler = () => setRefreshTick((t) => t + 1);
     window.addEventListener("eca-upi-orders-updated", handler);
@@ -103,6 +105,7 @@ export default function MaterialPage() {
           { id: "ncert-books", label: "NCERT Books" },
           { id: "ncert-crux", label: "NCERT Crux" },
           { id: "editorial", label: "Daily Editorial PDFs" },
+          { id: "daily-pdf", label: "Daily PDF" },
           { id: "essay-material", label: "Essay Material" },
           { id: "premium-notes", label: "Premium Notes" },
         ].map((tab) => (
@@ -228,6 +231,8 @@ export default function MaterialPage() {
       )}
 
       {/* Sub-Tab 4: Essay Material (Specific Essay Articles + PDFs) */}
+      {subTab === "daily-pdf" && <DailyPdfArchiveSection />}
+
       {subTab === "essay-material" && (
         <div className="space-y-4">
           {essayArticles.map((es, idx) => {

@@ -1483,6 +1483,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewSection(e.target.value)}
                   className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold" /><datalist id="eca-section-list">
                   <option>Daily Current Affairs</option>
+                  <option>Daily PDF</option>
                   <option>Test Series</option>
                   <option>Premium Notes</option>
                   <option>NCERT Books</option>
