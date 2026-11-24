@@ -127,19 +127,6 @@ export default function DailyPdfArchiveSection() {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5">
-              <span className="text-[11px] font-bold text-slate-600">Month:</span>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => {
-                  setSelectedMonth(e.target.value);
-                  if (e.target.value) setSelectedDate("");
-                }}
-                className="text-xs font-bold text-[#0B1B3D] bg-transparent focus:outline-none"
-              />
-            </div>
-
             {(selectedDate || selectedMonth) && (
               <button
                 type="button"
