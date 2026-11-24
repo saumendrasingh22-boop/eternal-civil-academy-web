@@ -115,7 +115,7 @@ export default function DailyPdfArchiveSection() {
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5">
-              <span className="text-[11px] font-bold text-slate-600">Exact Date:</span>
+              <span className="text-[11px] font-bold text-slate-600">Select Date:</span>
               <input
                 type="date"
                 value={selectedDate}

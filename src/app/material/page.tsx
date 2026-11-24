@@ -105,7 +105,7 @@ export default function MaterialPage() {
           { id: "ncert-books", label: "NCERT Books" },
           { id: "ncert-crux", label: "NCERT Crux" },
           { id: "editorial", label: "Daily Editorial PDFs" },
-          { id: "daily-pdf", label: "Daily PDF" },
+          { id: "daily-pdf", label: "Daily Current Affairs" },
           { id: "essay-material", label: "Essay Material" },
           { id: "premium-notes", label: "Premium Notes" },
         ].map((tab) => (

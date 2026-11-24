@@ -98,26 +98,6 @@ export default function CurrentAffairsPage() {
         ))}
       </div>
 
-      {customCaPdfs.length > 0 && (
-        <div className="mb-6 bg-white rounded-2xl border-2 border-[#0B1B3D]/15 p-5 shadow-sm">
-          <h2 className="text-sm font-extrabold text-[#0B1B3D] uppercase tracking-wide mb-3">Daily Current Affairs PDFs</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {customCaPdfs.map((pdf) => (
-              <div key={pdf.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-extrabold text-[#0B1B3D]">{pdf.title}</div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">{pdf.createdAt}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {pdf.englishPdfUrl && <a href={pdf.englishPdfUrl} target="_blank" rel="noreferrer" className="bg-[#0B1B3D] hover:bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">English PDF</a>}
-                  {pdf.hindiPdfUrl && <a href={pdf.hindiPdfUrl} target="_blank" rel="noreferrer" className="bg-[#E60000] hover:bg-red-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">Hindi PDF</a>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="space-y-5">
         {articles.map((item) => {
           const loc = getLocalizedCa(item, lang);
