@@ -73,6 +73,7 @@ import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
 import AdminMasterSyncBar from "@/components/AdminMasterSyncBar";
 import AdminUploadChooser from "@/components/AdminUploadChooser";
+import { syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 import AdminAutoSyncMonitor from "@/components/AdminAutoSyncMonitor";
 import AdminSuperCrudPanel from "@/components/AdminSuperCrudPanel";
 
@@ -487,6 +488,14 @@ export default function AdminDashboardPage() {
       },
       ...prev,
     ]);
+    try {
+      const rawC = window.localStorage.getItem("eca_custom_content_v1");
+      const prevC = rawC ? JSON.parse(rawC) : [];
+      const nextC = [{ id: "cnt-" + Date.now(), section: newSection, title: newTitle.trim(), priceInr: Number(newPrice) || 0, englishPdfUrl: englishPdfLink.trim(), hindiPdfUrl: hindiPdfLink.trim(), createdAt: new Date().toISOString().slice(0, 10) }, ...(Array.isArray(prevC) ? prevC : [])];
+      window.localStorage.setItem("eca_custom_content_v1", JSON.stringify(nextC));
+      window.dispatchEvent(new Event("eca-custom-content-updated"));
+      syncCmsKeyToCloud("custom_content", nextC, 150);
+    } catch {}
     setNewTitle("");
     setNewPrice("0");
     setEnglishPdfLink("");

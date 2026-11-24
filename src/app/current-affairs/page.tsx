@@ -11,6 +11,8 @@ import { Star, Languages, FileText } from "lucide-react";
 export default function CurrentAffairsPage() {
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [gsFilter, setGsFilter] = useState("ALL");
+  const [customCaPdfs, setCustomCaPdfs] = useState<Array<{ id: string; section: string; title: string; priceInr: number; englishPdfUrl: string; hindiPdfUrl: string; createdAt: string }>>([]);
+  useEffect(() => { const loadCustomPdfs = () => { try { const raw = window.localStorage.getItem("eca_custom_content_v1"); const parsed = raw ? JSON.parse(raw) : []; if (Array.isArray(parsed)) setCustomCaPdfs(parsed.filter((x: any) => (x.section || "").toLowerCase().includes("current affairs"))); } catch {} }; loadCustomPdfs(); window.addEventListener("eca-custom-content-updated", loadCustomPdfs); return () => window.removeEventListener("eca-custom-content-updated", loadCustomPdfs); }, []);
   const [allArticles, setAllArticles] = useState<BilingualCurrentAffairItem[]>(
     STRUCTURED_CURRENT_AFFAIRS
   );
@@ -88,6 +90,26 @@ export default function CurrentAffairsPage() {
           </button>
         ))}
       </div>
+
+      {customCaPdfs.length > 0 && (
+        <div className="mb-6 bg-white rounded-2xl border-2 border-[#0B1B3D]/15 p-5 shadow-sm">
+          <h2 className="text-sm font-extrabold text-[#0B1B3D] uppercase tracking-wide mb-3">Daily Current Affairs PDFs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {customCaPdfs.map((pdf) => (
+              <div key={pdf.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs font-extrabold text-[#0B1B3D]">{pdf.title}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">{pdf.createdAt}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pdf.englishPdfUrl && <a href={pdf.englishPdfUrl} target="_blank" rel="noreferrer" className="bg-[#0B1B3D] hover:bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">English PDF</a>}
+                  {pdf.hindiPdfUrl && <a href={pdf.hindiPdfUrl} target="_blank" rel="noreferrer" className="bg-[#E60000] hover:bg-red-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg">Hindi PDF</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-5">
         {articles.map((item) => {
