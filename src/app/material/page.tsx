@@ -5,6 +5,7 @@ import {
   NCERT_SUBJECTS,
   NCERT_CLASSES,
   PREMIUM_BOOK_COVERS,
+  BookCoverItem,
 } from "@/lib/siteData";
 import { loadPremiumBooks } from "@/lib/premiumBooksStore";
 import { getItemUnlockState } from "@/lib/paymentOrdersStore";

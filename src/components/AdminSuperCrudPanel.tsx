@@ -42,7 +42,7 @@ export default function AdminSuperCrudPanel() {
   };
   const syncContent = async () => { setMsg("Syncing Content..."); const r = await saveCustomContent(content); showStatus(r.ok, r.status, "Custom Content"); };
 
-  const addBook = () => setBooks([{ id: "book-" + Date.now(), title: "New Premium Notes", subject: "General Studies", coverImage: "/covers/modern-history.jpg", priceInr: 99, isPaid: true, englishPdfUrl: "", hindiPdfUrl: "", uploadedBy: "super_admin", isLocked: false }, ...books]);
+  const addBook = () => setBooks([{ id: "book-" + Date.now(), slug: "book-" + Date.now(), pages: "100+ Pages", title: "New Premium Notes", subject: "General Studies", coverImage: "/covers/modern-history.jpg", priceInr: 99, isPaid: true, englishPdfUrl: "", hindiPdfUrl: "", uploadedBy: "super_admin", isLocked: false }, ...books]);
   const addContent = () => setContent([{ id: "cnt-" + Date.now(), section: "Material", title: "New Study Material PDF", priceInr: 0, englishPdfUrl: "", hindiPdfUrl: "", createdAt: new Date().toISOString().slice(0, 10) }, ...content]);
 
   return (

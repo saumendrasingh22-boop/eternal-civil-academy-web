@@ -71,6 +71,7 @@ import {
 import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
+import AdminAutoSyncMonitor from "@/components/AdminAutoSyncMonitor";
 import AdminSuperCrudPanel from "@/components/AdminSuperCrudPanel";
 
 const COVER_OPTIONS = [
@@ -740,6 +741,8 @@ export default function AdminDashboardPage() {
           )}
         </div>
       )}
+
+      {canManageAutomation && <AdminAutoSyncMonitor />}
 
       {/* SUPER ADMIN ONLY (unless explicitly delegated): PAYMENT SYSTEM */}
       {canManagePayments && (
