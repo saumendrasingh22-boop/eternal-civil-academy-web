@@ -6,6 +6,7 @@ import {
   NCERT_CLASSES,
   PREMIUM_BOOK_COVERS,
 } from "@/lib/siteData";
+import { loadPremiumBooks } from "@/lib/premiumBooksStore";
 import { getItemUnlockState } from "@/lib/paymentOrdersStore";
 import DualPdfButton from "@/components/DualPdfButton";
 import UpiUnlockModal from "@/components/UpiUnlockModal";
@@ -19,6 +20,7 @@ export default function MaterialPage() {
   const [selectedSubject, setSelectedSubject] = useState<string>("History");
   const [selectedClass, setSelectedClass] = useState<string>("Class 6");
   const [refreshTick, setRefreshTick] = useState(0);
+  const [premiumBooks, setPremiumBooks] = useState<BookCoverItem[]>(PREMIUM_BOOK_COVERS);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -255,7 +257,7 @@ export default function MaterialPage() {
       {/* Sub-Tab 5: Premium Notes (Tamper-Proof Persistent UPI Unlock) */}
       {subTab === "premium-notes" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PREMIUM_BOOK_COVERS.map((book) => {
+          {premiumBooks.map((book) => {
             const unlockState = book.isPaid
               ? getItemUnlockState(book.id)
               : { status: "approved" as const };

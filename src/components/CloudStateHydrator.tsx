@@ -8,6 +8,8 @@ const KEY_MAP: { apiKey: string; storageKey: string; eventName: string }[] = [
   { apiKey: "cover_slides", storageKey: "eca_cover_page_slides_v1", eventName: "eca-cover-slides-updated" },
   { apiKey: "live_tests", storageKey: "eca_live_mock_tests_v1", eventName: "eca-live-tests-updated" },
   { apiKey: "site_settings", storageKey: "eca_super_admin_site_settings_v2", eventName: "eca-settings-updated" },
+  { apiKey: "premium_books", storageKey: "eca_premium_books_v2", eventName: "eca-premium-books-updated" },
+  { apiKey: "custom_content", storageKey: "eca_custom_content_v1", eventName: "eca-custom-content-updated" },
 ];
 
 export default function CloudStateHydrator() {

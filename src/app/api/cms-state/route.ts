@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "site_settings"]);
+const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "premium_books", "custom_content", "site_settings"]);
 const MAX_PAYLOAD_BYTES = 512 * 1024; // 500 KB max payload limit
 
 function getSupabaseAdmin() {

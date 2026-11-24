@@ -71,6 +71,7 @@ import {
 import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
+import AdminSuperCrudPanel from "@/components/AdminSuperCrudPanel";
 
 const COVER_OPTIONS = [
   "/covers/indian-polity.jpg",
@@ -1448,6 +1449,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {canManageContent && <AdminSuperCrudPanel />}
       {/* Upload Content & Manage Content */}
       {canManageContent && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
