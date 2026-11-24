@@ -1,4 +1,4 @@
-import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
+import { getAdminAuthHeaders, syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 export interface CoverSlideItem {
   id: string;
   sourceType: "brand" | "batch" | "notes" | "test_series" | "current_affairs" | "scheme" | "custom";
@@ -95,7 +95,7 @@ export function loadCoverSlides(): CoverSlideItem[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_COVER_SLIDES;
     const parsed = JSON.parse(raw) as CoverSlideItem[];
-    return parsed.length > 0 ? parsed : DEFAULT_COVER_SLIDES;
+    return Array.isArray(parsed) ? parsed : DEFAULT_COVER_SLIDES;
   } catch {
     return DEFAULT_COVER_SLIDES;
   }
@@ -105,5 +105,5 @@ export function saveCoverSlides(slides: CoverSlideItem[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(slides));
   window.dispatchEvent(new Event("eca-cover-slides-updated"));
-  fetch("/api/cms-state", { method: "POST", headers: getAdminAuthHeaders(), body: JSON.stringify({ key: "cover_slides", value: slides }) }).catch(() => {});
+  syncCmsKeyToCloud("cover_slides", slides, 150);
 }

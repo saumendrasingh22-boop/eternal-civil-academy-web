@@ -1,4 +1,4 @@
-import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
+import { getAdminAuthHeaders, syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 import { CBT_QUESTIONS, BilingualCbtQuestion } from "@/lib/siteData";
 
 export interface LiveMockTestItem {
@@ -69,7 +69,7 @@ export function loadLiveTests(): LiveMockTestItem[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_LIVE_TESTS;
     const parsed = JSON.parse(raw) as LiveMockTestItem[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_LIVE_TESTS;
+    return Array.isArray(parsed) ? parsed : DEFAULT_LIVE_TESTS;
   } catch {
     return DEFAULT_LIVE_TESTS;
   }
@@ -80,9 +80,5 @@ export function saveLiveTests(tests: LiveMockTestItem[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tests));
   window.dispatchEvent(new Event("eca-live-tests-updated"));
   // Non-blocking cross-device sync to Supabase if configured
-  fetch("/api/cms-state", {
-    method: "POST",
-    headers: getAdminAuthHeaders(),
-    body: JSON.stringify({ key: "live_tests", value: tests }),
-  }).catch(() => {});
+  syncCmsKeyToCloud("live_tests", tests, 150);
 }

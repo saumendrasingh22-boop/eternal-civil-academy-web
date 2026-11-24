@@ -15,32 +15,7 @@ export interface UpiPaymentOrder {
 
 const ORDERS_STORAGE_KEY = "eca_upi_payment_orders_v3";
 
-export const DEFAULT_UPI_ORDERS: UpiPaymentOrder[] = [
-  {
-    id: "ORD-2026-101",
-    itemId: "book-2",
-    itemType: "premium_notes",
-    itemTitle: "Indian Polity & Constitution",
-    priceInr: 99,
-    studentName: "Amit Kumar",
-    studentContact: "@amit_pcs",
-    utrNumber: "632419880412",
-    status: "Pending Verification",
-    createdAt: "20 Nov 2026, 09:10 AM",
-  },
-  {
-    id: "ORD-2026-102",
-    itemId: "batch-uppsc-2026-target",
-    itemType: "batch",
-    itemTitle: "UPPSC PCS 2026 Prelims Target Batch (GS + UP Special + CSAT)",
-    priceInr: 1499,
-    studentName: "Priya Verma",
-    studentContact: "@priya_uppsc",
-    utrNumber: "632419991108",
-    status: "Pending Verification",
-    createdAt: "20 Nov 2026, 09:35 AM",
-  },
-];
+export const DEFAULT_UPI_ORDERS: UpiPaymentOrder[] = [];
 
 export function loadUpiOrders(): UpiPaymentOrder[] {
   if (typeof window === "undefined") return DEFAULT_UPI_ORDERS;

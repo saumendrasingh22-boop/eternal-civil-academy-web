@@ -71,6 +71,7 @@ import {
 import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
+import AdminMasterSyncBar from "@/components/AdminMasterSyncBar";
 import AdminAutoSyncMonitor from "@/components/AdminAutoSyncMonitor";
 import AdminSuperCrudPanel from "@/components/AdminSuperCrudPanel";
 
@@ -625,6 +626,8 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      <AdminMasterSyncBar />
+
       {/* SUPER ADMIN / DELEGATED: Website Growth Analytics */}
       {canViewAnalytics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
@@ -1060,7 +1063,7 @@ export default function AdminDashboardPage() {
                         {slide.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                       </button>
                     )}
-                    {(!slide.isLocked || canLockContent) && coverSlides.length > 1 && (
+                    {(!slide.isLocked || canLockContent) && (
                       <button
                         onClick={() => deleteCoverSlide(slide)}
                         className="p-1.5 rounded-lg bg-red-50 text-[#E60000] hover:bg-red-100"

@@ -1,4 +1,4 @@
-import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
+import { getAdminAuthHeaders, syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 export interface BatchItem {
   id: string;
   slug: string;
@@ -155,7 +155,7 @@ export function loadBatches(): BatchItem[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_BATCHES;
     const parsed = JSON.parse(raw) as BatchItem[];
-    return parsed.length > 0 ? parsed : DEFAULT_BATCHES;
+    return Array.isArray(parsed) ? parsed : DEFAULT_BATCHES;
   } catch {
     return DEFAULT_BATCHES;
   }
@@ -165,5 +165,5 @@ export function saveBatches(batches: BatchItem[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(batches));
   window.dispatchEvent(new Event("eca-batches-updated"));
-  fetch("/api/cms-state", { method: "POST", headers: getAdminAuthHeaders(), body: JSON.stringify({ key: "batches", value: batches }) }).catch(() => {});
+  syncCmsKeyToCloud("batches", batches, 150);
 }

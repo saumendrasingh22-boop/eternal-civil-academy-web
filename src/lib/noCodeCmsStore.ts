@@ -1,4 +1,4 @@
-import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
+import { getAdminAuthHeaders, syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 import {
   STATES_LIST,
   COMMISSIONS_LIST,
@@ -237,18 +237,18 @@ export function loadNoCodeCms(): NoCodeCmsState {
           : DEFAULT_NOCODE_CMS.paymentConfig.coupons,
       },
       states:
-        Array.isArray(parsed.states) && parsed.states.length > 0
+        Array.isArray(parsed.states)
           ? parsed.states
           : DEFAULT_NOCODE_CMS.states,
       commissions:
-        Array.isArray(parsed.commissions) && parsed.commissions.length > 0
+        Array.isArray(parsed.commissions)
           ? parsed.commissions
           : DEFAULT_NOCODE_CMS.commissions,
       notifications: Array.isArray(parsed.notifications)
         ? parsed.notifications
         : DEFAULT_NOCODE_CMS.notifications,
       dailyMcqs:
-        Array.isArray(parsed.dailyMcqs) && parsed.dailyMcqs.length > 0
+        Array.isArray(parsed.dailyMcqs)
           ? parsed.dailyMcqs
           : DEFAULT_NOCODE_CMS.dailyMcqs,
       inquiries: Array.isArray(parsed.inquiries)
@@ -265,11 +265,7 @@ export function saveNoCodeCms(state: NoCodeCmsState) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   window.dispatchEvent(new Event("eca-nocode-cms-updated"));
   // Non-blocking cloud sync to Supabase for cross-device updates
-  fetch("/api/cms-state", {
-    method: "POST",
-    headers: getAdminAuthHeaders(),
-    body: JSON.stringify({ key: "nocode_cms", value: state }),
-  }).catch(() => {});
+  syncCmsKeyToCloud("nocode_cms", state, 400);
 }
 
 export function submitStudentInquiry(
