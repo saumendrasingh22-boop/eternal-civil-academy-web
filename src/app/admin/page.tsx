@@ -1518,14 +1518,14 @@ export default function AdminDashboardPage() {
                   <Link2 className="w-3.5 h-3.5 text-[#E60000]" /> Unlimited Cloud PDF Links (Drive / R2 / Vault)
                 </div>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="English PDF URL (https://... OR filename.pdf from premium-pdfs)"
                   value={englishPdfLink}
                   onChange={(e) => setEnglishPdfLink(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white"
                 />
                 <input
-                  type="url"
+                  type="text"
                   placeholder="Hindi PDF URL (https://... OR filename-hi.pdf from premium-pdfs)"
                   value={hindiPdfLink}
                   onChange={(e) => setHindiPdfLink(e.target.value)}
