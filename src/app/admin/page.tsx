@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
   const [pinSourceType, setPinSourceType] = useState<
     "batch" | "notes" | "current_affairs" | "test_series" | "custom"
   >("batch");
-  const [pinTargetId, setPinTargetId] = useState<string>(DEFAULT_BATCHES[0].id);
+  const [pinTargetId, setPinTargetId] = useState<string>(DEFAULT_BATCHES[0]?.id || "");
   const [customBadge, setCustomBadge] = useState("FEATURED ANNOUNCEMENT");
   const [customTitle, setCustomTitle] = useState("");
   const [customCtaLabel, setCustomCtaLabel] = useState("Explore Now");
@@ -643,10 +643,10 @@ export default function AdminDashboardPage() {
       {canViewAnalytics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { label: "Total Views", value: "1,48,920", growth: "+24%", show: true },
-            { label: "PDF Downloads", value: "64,310", growth: "+31%", show: true },
-            { label: "Test Attempts", value: "28,450", growth: "+19%", show: true },
-            { label: "UPI Revenue", value: "₹42,850", growth: "+38%", show: canManagePayments },
+            { label: "Active Batches", value: String(batches.length), growth: "Live on /batches", show: true },
+            { label: "Cover Slides", value: String(coverSlides.filter((c) => c.active).length), growth: "Active on Home", show: true },
+            { label: "UPI Orders", value: upiOrders.filter((o) => o.status === "Approved").length + " / " + upiOrders.length, growth: "Approved / Total", show: true },
+            { label: "Approved UPI Revenue", value: "₹" + upiOrders.filter((o) => o.status === "Approved").reduce((sum, o) => sum + (Number(o.priceInr) || 0), 0).toLocaleString("en-IN"), growth: "Real Verified UPI", show: canManagePayments },
           ]
             .filter((s) => s.show)
             .map((stat, idx) => (

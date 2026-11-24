@@ -125,10 +125,7 @@ export const DEFAULT_NAV_ITEMS: NavTabItem[] = [
   { id: "nav-student-hub", href: "/student-hub", label: "Student Hub", visible: true, highlight: true },
 ];
 
-export const DEFAULT_EXAM_COUNTDOWNS: ExamCountdownItem[] = [
-  { id: "cd-uppsc-2026", title: "UPPSC PCS Prelims", examDate: "2026-12-20", active: true },
-  { id: "cd-upsc-2027", title: "UPSC CSE 2027 Prelims", examDate: "2027-05-23", active: true },
-];
+export const DEFAULT_EXAM_COUNTDOWNS: ExamCountdownItem[] = [];
 
 export const DEFAULT_NOCODE_CMS: NoCodeCmsState = {
   navItems: DEFAULT_NAV_ITEMS,
@@ -158,43 +155,17 @@ export const DEFAULT_NOCODE_CMS: NoCodeCmsState = {
     ctaHref: "/batches",
     imageUrl: "/covers/indian-polity.jpg",
   },
-  customPages: [
-    {
-      id: "page-about-eca",
-      slug: "about-us",
-      title: "About ETERNAL CIVIL ACADEMY",
-      subtitle: "Your Success, Our Commitment",
-      category: "Institute",
-      content:
-        "ETERNAL CIVIL ACADEMY is dedicated to empowering UPSC CSE and State PCS aspirants (UPPSC, BPSC, RPSC, MPPSC, HPSC, JPSC, UKPSC) with structured bilingual current affairs, free live CBT mock tests, NCERT crux notes, and personalized mentorship.",
-      pdfUrl: "",
-      youtubeUrl: "",
-      active: true,
-      createdAt: "20 Nov 2026",
-    },
-  ],
+  customPages: [],
   paymentConfig: {
     upiId: process.env.NEXT_PUBLIC_UPI_ID || "eternalcivilacademy@upi",
     merchantName: "ETERNAL CIVIL ACADEMY",
-    coupons: [
-      { id: "cpn-eca10", code: "ECA10", discountPercent: 10, active: true },
-    ],
+    coupons: [],
   },
   states: [...STATES_LIST],
   commissions: [...COMMISSIONS_LIST],
-  notifications: [...OFFICIAL_NOTIFICATIONS],
-  dailyMcqs: [...CBT_QUESTIONS],
-  inquiries: [
-    {
-      id: "INQ-1001",
-      studentName: "Rahul Sharma",
-      contact: "+91 98765 00001",
-      targetExam: "UPPSC PCS 2026",
-      message: "Need details about UPPSC PCS 2026 Target Batch schedule and bilingual PDFs.",
-      status: "New",
-      createdAt: "20 Nov 2026, 10:15 AM",
-    },
-  ],
+  notifications: [],
+  dailyMcqs: [],
+  inquiries: [],
 };
 
 const STORAGE_KEY = "eca_nocode_cms_state_v2";

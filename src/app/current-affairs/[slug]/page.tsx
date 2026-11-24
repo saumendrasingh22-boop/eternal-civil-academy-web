@@ -123,13 +123,13 @@ export default async function CurrentAffairDetailPage({ params }: { params: { sl
             <div className="flex items-center gap-1.5 text-xs font-extrabold text-yellow-300">
               <GraduationCap className="w-4 h-4" /> Featured Batch
             </div>
-            <h3 className="text-sm font-extrabold mt-2 leading-snug">{relatedBatch.title}</h3>
+            <h3 className="text-sm font-extrabold mt-2 leading-snug">{relatedBatch?.title || "Explore Our Coaching Batches"}</h3>
             <p className="text-[11px] text-slate-300 mt-1">
-              Starts {relatedBatch.startDate} • {relatedBatch.medium}
+              {relatedBatch ? `Starts ${relatedBatch.startDate} • ${relatedBatch.medium}` : "UPSC & State PCS Bilingual Batches"}
             </p>
           </div>
           <Link
-            href={`/batches/${relatedBatch.slug}`}
+            href={relatedBatch?.slug ? `/batches/${relatedBatch.slug}` : "/batches"}
             className="mt-4 inline-flex items-center justify-center bg-[#E60000] hover:bg-red-700 text-white text-xs font-extrabold py-2.5 px-4 rounded-xl transition"
           >
             Explore Batch →

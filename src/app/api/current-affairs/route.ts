@@ -66,6 +66,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     source: liveArticles.length > 0 ? "supabase_live_plus_curated" : "curated_default",
-    articles: [...liveArticles, ...fallbackFiltered],
+    articles: liveArticles.length > 0 ? liveArticles : fallbackFiltered,
   });
 }

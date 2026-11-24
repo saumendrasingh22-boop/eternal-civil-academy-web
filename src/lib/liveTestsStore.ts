@@ -16,50 +16,7 @@ export interface LiveMockTestItem {
   uploadedBy: string;
 }
 
-export const DEFAULT_LIVE_TESTS: LiveMockTestItem[] = [
-  {
-    id: "live-daily-gs-1",
-    slug: "daily-gs-and-current-affairs-live-mock-test",
-    title: "Daily GS & Current Affairs Live Mock Test",
-    examTag: "UPSC / UPPSC",
-    seriesType: "free_live",
-    source: "website",
-    durationMinutes: 10,
-    priceInr: 0,
-    date: "20 Nov 2026",
-    questions: CBT_QUESTIONS,
-    isActive: true,
-    uploadedBy: "super_admin",
-  },
-  {
-    id: "tg-quiz-2026-11-20",
-    slug: "telegram-live-quiz-142-ca-polity",
-    title: "Telegram Live Quiz #142 — Daily Current Affairs & Polity",
-    examTag: "UPSC / UPPSC",
-    seriesType: "free_live",
-    source: "telegram_bot",
-    durationMinutes: 10,
-    priceInr: 0,
-    date: "20 Nov 2026",
-    questions: CBT_QUESTIONS,
-    isActive: true,
-    uploadedBy: "telegram_bot",
-  },
-  {
-    id: "tg-quiz-2026-11-19",
-    slug: "telegram-live-quiz-141-history-geography",
-    title: "Telegram Live Quiz #141 — Modern History & Geography",
-    examTag: "BPSC / HPSC",
-    seriesType: "free_live",
-    source: "telegram_bot",
-    durationMinutes: 10,
-    priceInr: 0,
-    date: "19 Nov 2026",
-    questions: CBT_QUESTIONS,
-    isActive: true,
-    uploadedBy: "telegram_bot",
-  },
-];
+export const DEFAULT_LIVE_TESTS: LiveMockTestItem[] = [];
 
 const STORAGE_KEY = "eca_live_mock_tests_v1";
 

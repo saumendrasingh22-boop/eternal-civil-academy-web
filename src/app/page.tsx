@@ -323,6 +323,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
+                {currentMcq ? (
                 <div className="p-5">
                   <span className="inline-block bg-blue-50 text-[#0B1B3D] text-[11px] font-bold px-2.5 py-0.5 rounded mb-2">
                     {currentMcq.subject}
@@ -362,6 +363,9 @@ export default function HomePage() {
                     </div>
                   )}
                 </div>
+                ) : (
+                <div className="p-5 text-xs text-slate-500">Daily Practice MCQs will appear here once published from Admin.</div>
+                )}
               </div>
 
               <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
