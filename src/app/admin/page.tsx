@@ -72,6 +72,7 @@ import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 import AdminAuthGate, { clearAdminSession } from "@/components/AdminAuthGate";
 import AdminNoCodeModules from "@/components/AdminNoCodeModules";
 import AdminMasterSyncBar from "@/components/AdminMasterSyncBar";
+import AdminUploadChooser from "@/components/AdminUploadChooser";
 import AdminAutoSyncMonitor from "@/components/AdminAutoSyncMonitor";
 import AdminSuperCrudPanel from "@/components/AdminSuperCrudPanel";
 
@@ -627,6 +628,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <AdminMasterSyncBar />
+      <AdminUploadChooser />
 
       {/* SUPER ADMIN / DELEGATED: Website Growth Analytics */}
       {canViewAnalytics && (
