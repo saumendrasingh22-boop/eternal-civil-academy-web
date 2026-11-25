@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     types: { "application/rss+xml": `${siteUrl}/rss.xml` },
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/icon",
+    apple: "/icon",
   },
   openGraph: {
     type: "website",
