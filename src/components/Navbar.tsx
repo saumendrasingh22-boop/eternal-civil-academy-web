@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Send, Menu, X, ShieldCheck, ChevronDown } from "lucide-react";
 import PwaInstaller from "./PwaInstaller";
 import GlobalSearchModal from "./GlobalSearchModal";
@@ -10,6 +11,9 @@ import { loadNoCodeCms, DEFAULT_NAV_ITEMS, NavTabItem } from "@/lib/noCodeCmsSto
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navLinks, setNavLinks] = useState<NavTabItem[]>(DEFAULT_NAV_ITEMS);
+
+  const pathname = usePathname() || "/";
+  const isNavActive = (href: string) => (!href ? false : href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/"));
 
   useEffect(() => {
     const sync = () => {
@@ -91,38 +95,31 @@ export default function Navbar() {
       {/* Tier 2: Desktop Keyword Mega Bar */}
       <nav className="hidden lg:block bg-white border-b border-slate-200 text-[#0B1B3D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-11 text-xs font-bold tracking-tight overflow-x-auto">
-          {navLinks.map((item) => (
-            <Link
-              key={item.id || item.href}
-              href={item.href}
-              className={`px-2 py-2 rounded-md transition flex items-center gap-1 whitespace-nowrap ${
-                item.highlight || item.href === "/batches"
-                  ? "text-[#E60000] bg-red-50/70 hover:bg-red-100"
-                  : "hover:bg-red-50 hover:text-[#E60000]"
-              }`}
-            >
-              <span>{item.label}</span>
-              {["Material", "PYQ", "State Special", "Syllabus"].includes(item.label) && (
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              )}
-            </Link>
-          ))}
+          {navLinks.map((item) => {
+  const active = isNavActive(item.href);
+  return (
+    <Link key={item.id || item.href} href={item.href} aria-current={active ? "page" : undefined} className={`px-2.5 py-1.5 rounded-md transition flex items-center gap-1.5 whitespace-nowrap ${active ? "bg-[#0B1B3D] text-white shadow-sm ring-1 ring-[#E60000]/40" : item.highlight || item.href === "/batches" ? "text-[#E60000] bg-red-50/70 hover:bg-red-100" : "hover:bg-red-50 hover:text-[#E60000]"}`}>
+      {active && <span className="w-1.5 h-1.5 rounded-full bg-[#E60000] shrink-0" />}
+      <span>{item.label}</span>
+      {["Material", "PYQ", "State Special", "Syllabus"].includes(item.label) && (<ChevronDown className={`w-3 h-3 ${active ? "opacity-90" : "opacity-60"}`} />)}
+    </Link>
+  );
+})}
         </div>
       </nav>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#08132B] text-white px-4 py-4 space-y-1.5 border-t border-white/10 max-h-[80vh] overflow-y-auto">
-          {navLinks.map((item) => (
-            <Link
-              key={item.id || item.href}
-              href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2.5 px-3 rounded-lg text-sm font-semibold hover:bg-white/10 border-b border-white/5"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navLinks.map((item) => {
+  const active = isNavActive(item.href);
+  return (
+    <Link key={item.id || item.href} href={item.href} aria-current={active ? "page" : undefined} onClick={() => setMobileMenuOpen(false)} className={`flex items-center justify-between py-2.5 px-3 rounded-lg text-sm border-b border-white/5 transition ${active ? "bg-white/15 text-white font-extrabold border-l-4 border-l-[#E60000]" : "font-semibold hover:bg-white/10"}`}>
+      <span>{item.label}</span>
+      {active && <span className="w-2 h-2 rounded-full bg-[#E60000] shrink-0" />}
+    </Link>
+  );
+})}
           <Link
             href="/join-us"
             onClick={() => setMobileMenuOpen(false)}
