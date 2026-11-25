@@ -362,6 +362,13 @@ def call_gemini(prompt: str):
                 },
                 timeout=45,
             )
+            if r.status_code == 503:
+                time.sleep(4)
+                r = requests.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}",
+                    json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096, "responseMimeType": "application/json"}},
+                    timeout=45,
+                )
             if r.status_code == 429:
                 print(f"[gemini 429] {model} quota exhausted - skipping for rest of run")
                 EXHAUSTED_GEMINI_MODELS.add(model)
@@ -385,7 +392,7 @@ def call_groq(prompt: str):
     global AI_ERROR_COUNT
     if not GROQ_KEY:
         return None
-    for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+    for model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
         try:
             r = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
