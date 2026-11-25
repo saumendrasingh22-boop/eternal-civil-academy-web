@@ -99,7 +99,7 @@ export default async function CurrentAffairDetailPage({ params }: { params: { sl
 
       {/* Automatic Internal Linking: Related Articles + Recommended Batch */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-12 gap-5">
-        <div className="md:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="md:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm print:hidden">
           <h3 className="text-sm font-extrabold text-[#0B1B3D] uppercase tracking-wider mb-3">
             Related Current Affairs
           </h3>

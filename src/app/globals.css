@@ -8,3 +8,49 @@
     color: #0F172A;
   }
 }
+
+/* ECA_CLEAN_PRINT_V1 */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 14mm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  header,
+  footer,
+  nav,
+  aside,
+  button,
+  [role="navigation"],
+  .fixed,
+  .sticky,
+  [class*="fixed"],
+  [class*="sticky"],
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  article,
+  section,
+  .rounded-2xl,
+  .rounded-xl {
+    box-shadow: none !important;
+  }
+  .rounded-xl,
+  .rounded-2xl,
+  ul,
+  li,
+  blockquote {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
