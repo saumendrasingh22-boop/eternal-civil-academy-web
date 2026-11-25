@@ -195,11 +195,25 @@ STRICT RULES:
 
 
 def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
+    import base64 as _b64
     from weasyprint import HTML
 
     is_hi = lang == "hi"
+    tag_lbl = "दैनिक NCERT क्विज़ (20 MCQs)" if is_hi else "Daily NCERT Quiz (20 MCQs)"
     title = f"दैनिक NCERT क्विज़ (20 MCQs) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 MCQs) — {date_str}"
-    sub = "UPSC | UPPSC | BPSC | State PCS • व्याख्या सहित उत्तर कुंजी" if is_hi else "UPSC | UPPSC | BPSC | State PCS • With Detailed Explanations"
+    sub = "Class 6-12 NCERT • +1 सही / -1/3 नेगेटिव मार्किंग • व्याख्या सहित" if is_hi else "Class 6-12 NCERT • +1 Correct / -1/3 Negative Marking • With Explanations"
+
+    logo_src = "https://www.eternalcivilacademy.com/icon-192.png?v=3"
+    for cand in ("public/eca-logo.png", "public/logo.png", "public/icon-192.png"):
+        if os.path.exists(cand):
+            with open(cand, "rb") as lf:
+                logo_src = "data:image/png;base64," + _b64.b64encode(lf.read()).decode("ascii")
+            break
+
+    web_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B1B3D" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+    tg_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="#229ED9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>'
+    ig_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
+
     q_blocks = []
     for q in questions:
         qtxt = html.escape(q["questionHi"] if is_hi else q["questionEn"]).replace("\n", "<br/>")
@@ -207,89 +221,45 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
         exp = html.escape(q["explanationHi"] if is_hi else q["explanationEn"])
         ans_lbl = "सही उत्तर" if is_hi else "Correct Answer"
         exp_lbl = "व्याख्या" if is_hi else "Explanation"
-        opt_html = "".join(
-            f'<div class="opt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>'
-            for k in ("A", "B", "C", "D")
-        )
-        q_blocks.append(f"""
-        <div class="qcard">
-          <div class="qmeta">Q{q['id']} &bull; {html.escape(q['subject'])}</div>
-          <div class="qtxt">{qtxt}</div>
-          <div class="opts">{opt_html}</div>
-          <div class="ans"><b>{ans_lbl}: ({q['correct']})</b> &mdash; <b>{exp_lbl}:</b> {exp}</div>
-        </div>""")
+        opt_html = "".join(f'<div class="opt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
+        q_blocks.append(f'<div class="qcard"><div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div><div class="qtxt">{qtxt}</div><div class="opts">{opt_html}</div><div class="ans"><b>{ans_lbl}: ({q["correct"]})</b> &mdash; <b>{exp_lbl}:</b> {exp}</div></div>')
 
-    doc_html = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<style>
-  @page {{
-    size: A4;
-    margin: 15mm 14mm 16mm 14mm;
-    @bottom-left {{ content: "ETERNAL CIVIL ACADEMY • www.eternalcivilacademy.com"; font-size: 8.5pt; color: #475569; }}
-    @bottom-right {{ content: "Page " counter(page) " of " counter(pages); font-size: 8.5pt; color: #475569; }}
-  }}
-  body {{
-    font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'DejaVu Sans', sans-serif;
-    color: #0f172a;
-    font-size: 10pt;
-    line-height: 1.48;
-  }}
-  .banner {{
-    background: #0B1B3D;
-    color: #ffffff;
-    padding: 14px 18px;
-    border-radius: 10px;
-    border-bottom: 4px solid #E60000;
-    margin-bottom: 14px;
-  }}
-  .brand {{ font-size: 15pt; font-weight: 800; letter-spacing: 0.6px; }}
-  .tag {{ font-size: 8.5pt; color: #cbd5e1; margin-top: 2px; }}
-  .title {{ font-size: 12.5pt; font-weight: 700; color: #fde047; margin-top: 8px; }}
-  .sub {{ font-size: 8.5pt; color: #e2e8f0; margin-top: 2px; }}
-  .qcard {{
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 9px 12px;
-    margin-bottom: 10px;
-    page-break-inside: avoid;
-  }}
-  .qmeta {{
-    display: inline-block;
-    background: #eff6ff;
-    color: #0B1B3D;
-    font-size: 8pt;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 4px;
-    margin-bottom: 5px;
-  }}
-  .qtxt {{ font-weight: 700; margin-bottom: 6px; }}
-  .opts {{ margin-left: 6px; margin-bottom: 6px; }}
-  .opt {{ margin-bottom: 2px; font-size: 9.5pt; }}
-  .ans {{
-    background: #fefce8;
-    border-left: 3px solid #E60000;
-    padding: 5px 8px;
-    font-size: 9pt;
-    color: #1e293b;
-  }}
-</style>
-</head>
-<body>
-  <div class="banner">
-    <div class="brand">ETERNAL CIVIL ACADEMY</div>
-    <div class="tag">Your Success, Our Commitment &bull; www.eternalcivilacademy.com</div>
-    <div class="title">{html.escape(title)}</div>
-    <div class="sub">{html.escape(sub)}</div>
-  </div>
-  {''.join(q_blocks)}
-</body>
-</html>"""
+    doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+@page{{size:A4;margin:14mm 15mm 16mm 15mm;@bottom-right{{content:"Page " counter(page) " of " counter(pages);font-size:8pt;color:#64748b}}}}
+*{{box-sizing:border-box}}
+body{{font-family:'Noto Sans Devanagari','Lohit Devanagari','DejaVu Sans',sans-serif;color:#0f172a;font-size:9.8pt;line-height:1.45;margin:0;position:relative}}
+.wm{{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%) rotate(-32deg);font-size:34pt;font-weight:800;color:rgba(11,27,61,0.045);white-space:nowrap;z-index:-1}}
+.hdr{{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #0B1B3D;padding-bottom:10px;margin-bottom:12px}}
+.hl{{display:flex;align-items:center;gap:10px}}
+.lg{{width:44px;height:44px;border-radius:8px;object-fit:contain}}
+.br{{font-size:13.5pt;font-weight:800;color:#0B1B3D;letter-spacing:.4px}}
+.tg{{font-size:8pt;color:#E60000;font-weight:700}}
+.hr{{text-align:right}}
+.hr-tag{{display:inline-block;background:#fef2f2;color:#E60000;font-size:8pt;font-weight:800;padding:2px 8px;border-radius:99px;border:1px solid #fecaca}}
+.hr-web{{display:block;font-size:8pt;font-weight:700;color:#0B1B3D;text-decoration:none;margin-top:3px}}
+.meta{{background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #E60000;border-radius:6px;padding:7px 11px;margin-bottom:12px}}
+.meta h1{{font-size:11.5pt;color:#0B1B3D;margin:0 0 2px 0}}
+.meta p{{font-size:8.2pt;color:#475569;margin:0}}
+.qcard{{border:1px solid #cbd5e1;border-radius:7px;padding:8px 11px;margin-bottom:9px;page-break-inside:avoid}}
+.qmeta{{display:inline-block;background:#eff6ff;color:#0B1B3D;font-size:7.8pt;font-weight:800;padding:1.5px 7px;border-radius:4px;margin-bottom:4px}}
+.qtxt{{font-weight:700;margin-bottom:5px}}
+.opts{{margin-left:6px;margin-bottom:5px}}
+.opt{{margin-bottom:2px;font-size:9.2pt}}
+.ans{{background:#fefce8;border-left:3px solid #E60000;padding:5px 8px;font-size:8.8pt;color:#1e293b}}
+.ft{{margin-top:14px;padding-top:9px;border-top:2px solid #0B1B3D;text-align:center;page-break-inside:avoid}}
+.ft-links{{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:5px}}
+.ft-links span{{display:inline-flex;align-items:center;gap:4px;font-size:8.2pt;font-weight:700}}
+.ft-links a{{color:#0B1B3D;text-decoration:none}}
+.ft-copy{{font-size:7.8pt;color:#64748b;font-weight:600}}
+</style></head><body>
+<div class="wm">www.eternalcivilacademy.com</div>
+<div class="hdr"><div class="hl"><img src="{logo_src}" class="lg"/><div><div class="br">ETERNAL CIVIL ACADEMY</div><div class="tg">Your Success, Our Commitment</div></div></div><div class="hr"><span class="hr-tag">{html.escape(tag_lbl)}</span><a href="https://www.eternalcivilacademy.com" class="hr-web">www.eternalcivilacademy.com</a></div></div>
+<div class="meta"><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
+{''.join(q_blocks)}
+<div class="ft"><div class="ft-links"><span>{web_svg}<a href="https://www.eternalcivilacademy.com">www.eternalcivilacademy.com</a></span><span>{tg_svg}<a href="https://t.me/EternalCivilAcademy">t.me/EternalCivilAcademy</a></span><span>{ig_svg}<a href="https://instagram.com/eternalcivilacademy">@eternalcivilacademy</a></span></div><div class="ft-copy">&copy; 2026 ETERNAL CIVIL ACADEMY &bull; Dedicated to UPSC &amp; State PCS Examinations</div></div>
+</body></html>"""
     HTML(string=doc_html).write_pdf(out_path)
     print(f"[PDF OK] {out_path} ({os.path.getsize(out_path)} bytes)")
-
 
 def upload_to_release(file_path: str, content_type: str) -> str:
     if not GITHUB_TOKEN:
