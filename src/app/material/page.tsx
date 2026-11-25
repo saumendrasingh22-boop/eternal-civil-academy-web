@@ -25,6 +25,33 @@ export default function MaterialPage() {
   const [premiumBooks, setPremiumBooks] = useState<BookCoverItem[]>(PREMIUM_BOOK_COVERS);
 
   useEffect(() => {
+    const normalize = (arr: any[]) => arr.map((b: any) => ({ ...b, priceInr: Number(b?.priceInr || 0), isPaid: Number(b?.priceInr || 0) > 0 }));
+    const loadBooks = () => {
+      try {
+        const raw = window.localStorage.getItem("eca_premium_books_v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setPremiumBooks(normalize(parsed));
+        }
+      } catch {}
+    };
+    loadBooks();
+    fetch("/api/cms-state?key=premium_books&_t=" + Date.now(), { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.synced && Array.isArray(d.value)) {
+          const norm = normalize(d.value);
+          setPremiumBooks(norm);
+          try { window.localStorage.setItem("eca_premium_books_v1", JSON.stringify(norm)); } catch {}
+        }
+      })
+      .catch(() => {});
+    window.addEventListener("eca-premium-books-updated", loadBooks);
+    return () => window.removeEventListener("eca-premium-books-updated", loadBooks);
+  }, []);
+
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
