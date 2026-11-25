@@ -111,18 +111,18 @@ export interface NoCodeCmsState {
 // State Special Current Affairs placed right next to Daily Current Affairs
 export const DEFAULT_NAV_ITEMS: NavTabItem[] = [
   { id: "nav-home", href: "/", label: "Home", visible: true },
-  { id: "nav-batches", href: "/batches", label: "Batches", visible: true, highlight: true },
-  { id: "nav-test-series", href: "/test-series", label: "Test Series", visible: true },
   { id: "nav-ca", href: "/current-affairs", label: "Daily Current Affairs", visible: true },
+  { id: "nav-test-series", href: "/test-series", label: "Test Series", visible: true, highlight: true },
   { id: "nav-state", href: "/state-special", label: "State Special Current Affairs", visible: true },
   { id: "nav-material", href: "/material", label: "Material", visible: true },
+  { id: "nav-syllabus", href: "/syllabus", label: "Syllabus", visible: true },
+  { id: "nav-batches", href: "/batches", label: "Batches", visible: true },
   { id: "nav-pyq", href: "/pyq", label: "PYQ", visible: true },
   { id: "nav-mag", href: "/monthly-magazine", label: "Monthly Magazine", visible: true },
   { id: "nav-schemes", href: "/schemes", label: "Schemes", visible: true },
   { id: "nav-toppers", href: "/toppers-copy", label: "Toppers' Copy", visible: true },
   { id: "nav-eval", href: "/answer-evaluation", label: "Answer Evaluation", visible: true },
-  { id: "nav-syllabus", href: "/syllabus", label: "Syllabus", visible: true },
-  { id: "nav-student-hub", href: "/student-hub", label: "Student Hub", visible: true, highlight: true },
+  { id: "nav-student-hub", href: "/student-hub", label: "Student Hub", visible: true },
 ];
 
 export const DEFAULT_EXAM_COUNTDOWNS: ExamCountdownItem[] = [];

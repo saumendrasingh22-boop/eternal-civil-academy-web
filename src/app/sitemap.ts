@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${siteUrl}${route}`,
     lastModified: now,
     changeFrequency: route === "" || route === "/current-affairs" || route === "/test-series" ? "hourly" : "daily",
-    priority: route === "" || route === "/current-affairs" || route === "/test-series" ? 1.0 : route === "/state-special" ? 0.85 : 0.7,
+    priority: ["", "/current-affairs", "/test-series", "/state-special", "/material", "/syllabus"].includes(route) ? 1.0 : 0.7,
   }));
 
   const caSlugs = new Set<string>(STRUCTURED_CURRENT_AFFAIRS.map((a) => a.slug));
