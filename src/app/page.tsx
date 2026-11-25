@@ -329,7 +329,7 @@ export default function HomePage() {
             <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
               <div>
                 <div className="bg-[#0B1B3D] text-white px-5 py-3.5 flex items-center justify-between">
-                  <h2 className="font-bold text-sm uppercase tracking-wider">Daily Practice MCQs</h2>
+                  <div className="flex items-center justify-between gap-2 w-full"><h2 className="font-bold text-sm uppercase tracking-wider">Daily NCERT Quiz</h2><a href="/daily-practice-test" className="text-[11px] font-extrabold bg-[#E60000] text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition">Full 20-MCQ Quiz &rarr;</a></div>
                   <div className="flex gap-1">
                     {mcqsList.slice(0, 5).map((_, idx) => (
                       <button

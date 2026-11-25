@@ -10,10 +10,10 @@ export default function MobileBottomNav() {
 
   const items = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/batches", label: "Batches", icon: GraduationCap },
-    { href: "/test-series", label: "Test Series", icon: FileCheck2 },
-    { href: "/current-affairs", label: "Current Affairs", icon: Newspaper },
+    { href: "/current-affairs", label: "Daily CA", icon: Newspaper },
     { href: "/material", label: "Material", icon: BookOpen },
+    { href: "/test-series", label: "Test Series", icon: FileCheck2 },
+    { href: "/batches", label: "Batch", icon: GraduationCap },
   ];
 
   return (

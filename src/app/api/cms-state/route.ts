@@ -6,7 +6,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 const NO_CACHE = { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } };
 
-const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "site_settings", "premium_books", "custom_content", "daily_pdfs"]);
+const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "site_settings", "premium_books", "custom_content", "daily_pdfs", "daily_practice_tests"]);
 const MAX_PAYLOAD_BYTES = 512 * 1024; // 500 KB max payload limit
 
 function getSupabaseAdmin() {
