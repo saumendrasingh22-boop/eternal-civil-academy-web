@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import HomeNcertQuizCard from "@/components/HomeNcertQuizCard";
 import {
   Newspaper,
   FileCheck2,
@@ -326,87 +327,9 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Column 1: Interactive Daily MCQs (4 cols) */}
-            <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-              <div>
-                <div className="bg-[#0B1B3D] text-white px-5 py-3.5 flex items-center justify-between">
-                  <div className="flex items-center justify-between gap-2 w-full"><h2 className="font-bold text-sm uppercase tracking-wider">Daily NCERT Quiz</h2><a href="/daily-practice-test" className="text-[11px] font-extrabold bg-[#E60000] text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition">Full 20-MCQ Quiz &rarr;</a></div>
-                  <div className="flex gap-1">
-                    {mcqsList.slice(0, 5).map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setMcqIdx(idx);
-                          setSelectedOpt(null);
-                        }}
-                        className={`w-6 h-6 rounded-full text-xs font-bold transition ${
-                          mcqIdx === idx
-                            ? "bg-[#E60000] text-white"
-                            : "bg-white/15 text-slate-200 hover:bg-white/25"
-                        }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <HomeNcertQuizCard />
 
-                {currentMcq ? (
-                <div className="p-5">
-                  <span className="inline-block bg-blue-50 text-[#0B1B3D] text-[11px] font-bold px-2.5 py-0.5 rounded mb-2">
-                    {currentMcq.subject}
-                  </span>
-                  <p className="text-sm font-bold text-slate-900 leading-snug">
-                    {currentMcq.questionEn}
-                  </p>
-
-                  <div className="mt-4 space-y-2">
-                    {(["A", "B", "C", "D"] as const).map((opt) => {
-                      const isPicked = selectedOpt === opt;
-                      const isRight = currentMcq.correct === opt;
-                      let style = "border-slate-200 hover:border-slate-300";
-                      if (selectedOpt) {
-                        if (isRight) style = "border-green-600 bg-green-50 text-green-900 font-bold";
-                        else if (isPicked) style = "border-[#E60000] bg-red-50 text-red-900 font-bold";
-                      }
-                      return (
-                        <button
-                          key={opt}
-                          onClick={() => setSelectedOpt(opt)}
-                          className={`w-full text-left p-2.5 rounded-xl border text-xs flex items-center justify-between transition ${style}`}
-                        >
-                          <span>
-                            <strong>{opt}.</strong> {currentMcq.optionsEn[opt]}
-                          </span>
-                          {selectedOpt && isRight && <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />}
-                          {selectedOpt && isPicked && !isRight && <XCircle className="w-4 h-4 text-[#E60000] shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {selectedOpt && (
-                    <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                      <strong>Explanation:</strong> {currentMcq.explanationEn}
-                    </div>
-                  )}
-                </div>
-                ) : (
-                <div className="p-5 text-xs text-slate-500">Daily Practice MCQs will appear here once published from Admin.</div>
-                )}
-              </div>
-
-              <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <Link
-                  href="/test-series/live-cbt"
-                  className="text-xs font-extrabold text-[#E60000] hover:underline"
-                >
-                  Free Live Test Series →
-                </Link>
-                <span className="text-[11px] text-slate-500 font-semibold">+2.0 / -0.66</span>
-              </div>
-            </div>
-
-            {/* Column 2: Structured Daily Current Affairs (4 cols) */}
+          {/* Column 2: Structured Daily Current Affairs (4 cols) */}
             <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
               <div>
                 <div className="bg-[#E60000] text-white px-5 py-3.5 flex items-center justify-between">
