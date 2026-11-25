@@ -24,7 +24,7 @@ jobs:
       - name: Install WeasyPrint, Devanagari fonts, and requests
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info fonts-noto-core fonts-lohit-deva
+          sudo apt-get install -y -qq libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libffi-dev shared-mime-info fonts-noto-core fonts-lohit-deva
           pip install -q requests weasyprint
 
       - name: Generate 20-MCQ Daily NCERT Quiz and Branded EN/HI PDFs
