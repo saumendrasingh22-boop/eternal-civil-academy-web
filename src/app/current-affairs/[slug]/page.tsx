@@ -10,11 +10,14 @@ import { ArrowLeft, GraduationCap } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { BilingualCurrentAffairItem } from "@/lib/bilingualCaMap";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 async function fetchArticleBySlug(slug: string): Promise<BilingualCurrentAffairItem> {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
-      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-      const { data } = await sb.from("current_affairs").select("*").eq("slug", slug).single();
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { global: { fetch: (u, o) => fetch(u, { ...o, cache: "no-store" }) } });
+      const { data: rows } = await sb.from("current_affairs").select("*").eq("slug", slug).order("created_at", { ascending: false }).limit(1);
+      const data = rows && rows[0];
       if (data) {
         return { id: data.id, slug: data.slug, sectionType: data.section_type, stateName: data.state_name || undefined, examRelevance: data.exam_relevance || "GS-2", title: data.title, titleHi: data.title_hi || undefined, whyInNews: data.why_in_news, whyInNewsHi: data.why_in_news_hi || undefined, keyHighlights: Array.isArray(data.key_highlights) ? data.key_highlights : [], keyHighlightsHi: Array.isArray(data.key_highlights_hi) ? data.key_highlights_hi : undefined, prelimsFacts: Array.isArray(data.prelims_facts) ? data.prelims_facts : [], prelimsFactsHi: Array.isArray(data.prelims_facts_hi) ? data.prelims_facts_hi : undefined, mainsPerspective: data.mains_perspective || "", mainsPerspectiveHi: data.mains_perspective_hi || undefined, date: data.published_date || new Date().toISOString().slice(0, 10), englishPdfUrl: data.english_pdf_url || "#download-english-ca", hindiPdfUrl: data.hindi_pdf_url || "#download-hindi-ca", uploadedBy: data.uploaded_by || "auto_sync", isLocked: Boolean(data.is_locked) };
       }

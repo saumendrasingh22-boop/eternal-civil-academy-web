@@ -1,4 +1,6 @@
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { STRUCTURED_CURRENT_AFFAIRS } from "@/lib/siteData";
@@ -13,10 +15,7 @@ export async function GET(req: NextRequest) {
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      );
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { global: { fetch: (u, o) => fetch(u, { ...o, cache: "no-store" }) } });
       let query = supabase
         .from("current_affairs")
         .select("*")
