@@ -14,6 +14,10 @@ interface DualPdfButtonProps {
 
 export default function DualPdfButton({ title, englishUrl = "#english-pdf", hindiUrl = "#hindi-pdf", compact = false, article }: DualPdfButtonProps) {
   const [open, setOpen] = useState(false);
+  const handlePdfTap = (e: React.MouseEvent<HTMLAnchorElement>, url?: string) => {
+    if (!url || url.startsWith("#")) { e.preventDefault(); setOpen(false); if (typeof window !== "undefined") window.print(); return; }
+    setTimeout(() => setOpen(false), 450);
+  };
   const isReal = (u?: string) => Boolean(u && /^https?:\/\//i.test(u.trim()));
   const onDl = (e: React.MouseEvent, lang: "en" | "hi", url?: string) => {
     if (isReal(url)) { setOpen(false); return; }

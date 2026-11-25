@@ -205,8 +205,7 @@ export default function DailyPdfArchiveSection() {
                 {item.englishPdfUrl && (
                   <a
                     href={item.englishPdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                    download rel="noopener noreferrer"
                     className="bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl inline-flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" /> English PDF
@@ -215,8 +214,7 @@ export default function DailyPdfArchiveSection() {
                 {item.hindiPdfUrl && (
                   <a
                     href={item.hindiPdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                    download rel="noopener noreferrer"
                     className="bg-[#E60000] hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl inline-flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" /> Hindi PDF
