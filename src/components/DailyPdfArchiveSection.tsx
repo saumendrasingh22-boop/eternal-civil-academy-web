@@ -204,7 +204,7 @@ export default function DailyPdfArchiveSection() {
               <div className="flex flex-wrap items-center gap-2">
                 {item.englishPdfUrl && (
                   <a
-                    href={item.englishPdfUrl}
+                    href={`/api/download-pdf?url=${encodeURIComponent(item.englishPdfUrl)}`}
                     download rel="noopener noreferrer"
                     className="bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl inline-flex items-center gap-1.5"
                   >
@@ -213,7 +213,7 @@ export default function DailyPdfArchiveSection() {
                 )}
                 {item.hindiPdfUrl && (
                   <a
-                    href={item.hindiPdfUrl}
+                    href={`/api/download-pdf?url=${encodeURIComponent(item.hindiPdfUrl)}`}
                     download rel="noopener noreferrer"
                     className="bg-[#E60000] hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl inline-flex items-center gap-1.5"
                   >
