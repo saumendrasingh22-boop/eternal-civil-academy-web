@@ -1,4 +1,5 @@
 "use client";
+import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
 import DualPdfButton from "@/components/DualPdfButton";
@@ -168,6 +169,7 @@ export default function MonthlyMagazinePage() {
           );
         })}
       </div>
+          <LiveAdminSectionFeed sectionMatch="Monthly Magazine" />
     </div>
   );
 }

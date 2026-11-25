@@ -1,4 +1,5 @@
 "use client";
+import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -351,6 +352,7 @@ export default function MaterialPage() {
           })}
         </div>
       )}
+          <LiveAdminSectionFeed sectionMatch="NCERT" />
     </div>
   );
 }

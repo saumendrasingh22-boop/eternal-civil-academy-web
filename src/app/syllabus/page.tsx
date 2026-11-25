@@ -1,4 +1,5 @@
 "use client";
+import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
 import { COMMISSIONS_LIST } from "@/lib/siteData";
@@ -102,6 +103,7 @@ export default function SyllabusPage() {
           );
         })}
       </div>
+          <LiveAdminSectionFeed sectionMatch="Syllabus" />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState } from "react";
 import DualPdfButton from "@/components/DualPdfButton";
@@ -85,6 +86,7 @@ export default function ToppersCopyPage() {
           );
         })}
       </div>
+          <LiveAdminSectionFeed sectionMatch="Toppers" />
     </div>
   );
 }

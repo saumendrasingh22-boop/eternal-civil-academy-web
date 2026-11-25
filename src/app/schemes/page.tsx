@@ -1,4 +1,5 @@
 "use client";
+import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -136,6 +137,7 @@ export default function SchemesPage() {
           </div>
         )}
       </div>
+          <LiveAdminSectionFeed sectionMatch="Schemes" />
     </div>
   );
 }
