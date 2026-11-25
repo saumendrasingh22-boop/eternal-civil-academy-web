@@ -30,9 +30,8 @@ GROQ_KEY = (os.getenv("GROQ_API_KEY") or "").strip()
 
 MAX_NATIONAL_PER_RUN = 5
 MAX_STATE_PER_RUN = 4
-AI_PACE_SECONDS = 4.5
+AI_PACE_SECONDS = 5.0
 
-# Strict Junk Blocker (Crime, Politics, Gossip, Routine Statements)
 JUNK_KEYWORDS = [
     "murder", "killed", "rape", "arrested", "police nab", "marry", "wedding", "divorce",
     "suicide", "accident", "crash", "protest", "dharna", "rally", "slams", "hits out",
@@ -43,20 +42,17 @@ JUNK_KEYWORDS = [
     "encroachment", "demolition", "transfer of", "sho suspended", "road mishap",
 ]
 
-# UPPSC + BPSC + One-Day Exam PYQ Weighted Signal Buckets
-# Higher score = higher probability of appearing in UPPSC / BPSC / RO-ARO / SSC Prelims
 PYQ_WEIGHTED_SIGNALS = [
-    # Tier-1 (Score +4): Highest-frequency UPPSC, BPSC & One-Day PYQ topics
     (4, [
         "gi tag", "geographical indication", "ramsar", "unesco", "tiger reserve",
         "biosphere reserve", "national park", "wildlife sanctuary", "index", "ranking",
-        "world bank", "imf", "undp", "niti aayog", "padma", "bharat ratna", "jnanpith",
-        "sahitya akademi", "nobel", "booker", "gopal ratna", "dadasaheb", "swachh survekshan",
-        "military exercise", "naval exercise", "air exercise", "joint exercise",
-        "isro", "drdo", "missile", "satellite", "gaganyaan", "chandrayaan", "aditya-l1",
-        "odop", "one district one product", "first in india", "india's first", "country's first",
+        "eight core", "core industries", "iip", "world bank", "imf", "undp", "niti aayog",
+        "padma", "bharat ratna", "jnanpith", "sahitya akademi", "nobel", "booker",
+        "gopal ratna", "dadasaheb", "swachh survekshan", "military exercise",
+        "naval exercise", "air exercise", "joint exercise", "isro", "drdo", "missile",
+        "satellite", "gaganyaan", "chandrayaan", "aditya-l1", "odop",
+        "one district one product", "first in india", "india's first", "country's first",
     ]),
-    # Tier-2 (Score +3): Schemes, Appointments, Summits, Budget, Polity, Sports
     (3, [
         "yojana", "scheme", "mission", "abhiyan", "portal", "app launched", "cabinet approves",
         "appointed", "new chairman", "new governor", "new cji", "election commissioner",
@@ -67,7 +63,6 @@ PYQ_WEIGHTED_SIGNALS = [
         "asian games", "chess", "badminton", "theme of", "world day", "national day",
         "book titled", "authored by", "expressway", "industrial corridor", "defence corridor",
     ]),
-    # Tier-3 (Score +2): Economy, Infra, MoUs, Science, Environment
     (2, [
         "policy", "mou", "treaty", "agreement", "gdp", "inflation", "export", "semiconductor",
         "green hydrogen", "solar", "nuclear", "metro", "airport", "port", "ai mission",
@@ -107,7 +102,6 @@ def strip_html(text: str) -> str:
 
 
 def exam_pyq_score(title: str, desc: str) -> int:
-    """Scores a news item based on UPPSC, BPSC & One-Day Exam PYQ relevance."""
     txt = f"{title} {desc}".lower()
     if any(j in txt for j in JUNK_KEYWORDS):
         return -1
@@ -133,7 +127,7 @@ def detect_scheme(title: str) -> bool:
 
 def detect_gs(title: str, desc: str, fallback: str) -> str:
     txt = f"{title} {desc}".lower()
-    if any(k in txt for k in ["rbi", "gdp", "economy", "inflation", "isro", "space", "climate", "environment", "ai ", "cyber", "budget", "drdo", "missile", "semiconductor", "hydrogen", "solar", "ramsar", "tiger", "national park", "wildlife"]):
+    if any(k in txt for k in ["rbi", "gdp", "economy", "inflation", "core industries", "iip", "isro", "space", "climate", "environment", "ai ", "cyber", "budget", "drdo", "missile", "semiconductor", "hydrogen", "solar", "ramsar", "tiger", "national park", "wildlife"]):
         return "GS-3"
     if any(k in txt for k in ["heritage", "culture", "history", "unesco", "monument", "gi tag", "award", "medal", "championship", "sports", "book titled", "day", "theme"]):
         return "GS-1"
@@ -158,8 +152,22 @@ def fetch_existing_slugs() -> set:
     return set()
 
 
+def fetch_article_excerpt(link: str) -> str:
+    """Best-effort fetch of source page paragraphs so exact lists, districts, and numbers are not missed."""
+    if not link or "news.google.com" in link:
+        return ""
+    try:
+        r = requests.get(link, headers={"User-Agent": HEADERS["User-Agent"]}, timeout=10)
+        if not r.ok or "text/html" not in (r.headers.get("Content-Type") or "").lower():
+            return ""
+        paras = re.findall(r"<p[^>]*>([\s\S]*?)</p>", r.text, flags=re.I)
+        cleaned = [strip_html(p) for p in paras if len(strip_html(p)) >= 45]
+        return " ".join(cleaned[:10])[:2200]
+    except Exception:
+        return ""
+
+
 def fetch_rss_items(url: str, limit: int = 12):
-    """Fetches RSS items, blocks junk, and ranks by UPPSC/BPSC/One-Day PYQ score (highest first)."""
     scored = []
     try:
         r = requests.get(url, headers=HEADERS, timeout=18)
@@ -173,7 +181,7 @@ def fetch_rss_items(url: str, limit: int = 12):
             if len(title) >= 16:
                 sc = exam_pyq_score(title, desc)
                 if sc >= 2:
-                    scored.append((sc, title, desc[:950], link))
+                    scored.append((sc, title, desc[:1200], link))
     except Exception as e:
         print(f"[rss skip] {url[:60]} -> {e}")
     scored.sort(key=lambda x: x[0], reverse=True)
@@ -203,39 +211,50 @@ def discover_gemini_models():
     return ACTIVE_GEMINI_MODELS
 
 
-def build_prompt(title: str, desc: str, state_name):
-    ctx = f"Target State: {state_name} (Highlight exact District/City, State Cabinet/Budget/ODOP/GI Tag angle if applicable)\n" if state_name else ""
+def build_prompt(title: str, desc: str, full_excerpt: str, state_name):
+    ctx = f"Target State: {state_name} (Include exact District/City, State Cabinet/Budget/ODOP/GI Tag specifics)\n" if state_name else ""
+    extra = f"\nSource Article Details:\n{full_excerpt}" if full_excerpt else ""
     return (
-        "You are a senior exam editor specializing in UPPSC Prelims, BPSC Prelims, UPSC Prelims, RO/ARO & One-Day Exams (SSC/Banking/Railways) for ETERNAL CIVIL ACADEMY (Ghatna Chakra / Eye Drishti / Speedy Current Affairs standard).\n\n"
+        "You are a senior UPSC Prelims, UPPSC Prelims, BPSC Prelims, RO/ARO & One-Day Exam Chief Editor for ETERNAL CIVIL ACADEMY (Drishti IAS + Vision IAS + Ghatna Chakra standard).\n\n"
         "STEP 1 — STRICT PYQ RELEVANCE GATE:\n"
-        "Accept ONLY news that can directly become a Prelims MCQ in UPPSC, BPSC, UPSC, RO/ARO or One-Day exams: "
-        "(1) Indices & Reports (publisher, India rank, top country), (2) Schemes/Missions/Portals (ministry, launch date/place, target, outlay), "
-        "(3) Major Appointments & Firsts, (4) National/International Awards, (5) Military Exercises & DRDO/ISRO Missions, "
-        "(6) Summits/Conferences (host city, edition, theme), (7) Environment/Ramsar/Tiger Reserves/GI Tags, "
-        "(8) Sports Championships & Indian Medalists, (9) Important Days & Official Themes / Books & Authors, "
-        "(10) Polity/Supreme Court/Committees/RBI/Budget/UP-Bihar District-Firsts.\n"
-        "If the news is crime, routine politics, protest, transfer/posting, accident, celebrity/gossip, or vague minister speeches with NO concrete exam fact, return ONLY: {\"skip\": true}.\n\n"
-        "STEP 2 — OUTPUT FORMAT (ONLY valid JSON with these exact keys):\n"
-        "title_en, title_hi, why_in_news, why_in_news_hi, key_highlights (array of 5 strings), key_highlights_hi (array of 5 strings), "
-        "prelims_facts (array of 6 strings), prelims_facts_hi (array of 6 strings), mains_perspective, mains_perspective_hi.\n\n"
-        "STRICT EDITORIAL RULES:\n"
-        "1. SHORT KEYWORD HEADLINE (title_en & title_hi): STRICTLY 3 to 7 words in crisp exam-keyword style (NO full newspaper sentences!). Examples: 'National Gopal Ratna Award 2026', 'Exercise Dharma Guardian 2026', 'Bihar 150 MW AI Data Centre', 'GI Tag: Rewa Sundarja Mango', 'राष्ट्रीय गोपाल रत्न पुरस्कार 2026'.\n"
-        "2. WHY IN NEWS (why_in_news / why_in_news_hi): 2 to 3 crisp, fact-packed sentences stating exact Date/Month, Organizing Body/Ministry, Place/District, and Core Event.\n"
-        "3. DEEPER PRELIMS EXPLANATION (key_highlights / key_highlights_hi — EXACTLY 5 detailed points, each starting with a bold keyword label):\n"
-        "   - Point 1: Core Fact (Ministry/Publisher/Winner/Appointee/Participating Nations)\n"
-        "   - Point 2: Exact Numbers & Targets (Budget ₹ crore, Rank/Score, Capacity, Range, Beneficiary target)\n"
-        "   - Point 3: Location / District / Host City & Edition (Crucial for UPPSC & BPSC Prelims)\n"
-        "   - Point 4: Static GK & Constitutional/Historical Background (Act, Article, Establishment Year, Headquarters, First/Previous Edition)\n"
-        "   - Point 5: Prelims Statement-Trap / Assertion-Reason Clarity (Key distinction often tested in UPPSC/BPSC/UPSC Prelims)\n"
-        "4. PRELIMS & ONE-DAY EXAM ONE-LINERS (prelims_facts / prelims_facts_hi — EXACTLY 6 ultra-crisp 'Label: Fact' one-liners directly matching UPPSC/BPSC/SSC PYQ style, e.g., 'Nodal Ministry: ...', 'Headquarters / Venue: ...', 'Rank / Winner / Outlay: ...', 'Static GK Link: ...', 'State / District Focus: ...', 'Exam Pointer: ...').\n"
-        "5. PURE BILINGUAL QUALITY: Every *_hi field MUST be pure Devanagari Hindi (keep only standard exam acronyms like RBI/ISRO/DRDO/GI/UNESCO in brackets if helpful). Every English field MUST be pure English.\n"
-        f"{ctx}Raw News Headline: {title}\nSummary: {desc}"
+        "Accept ONLY high-yield exam news (Indices/Reports, Eight Core/IIP/RBI/Budget, Government Schemes/Portals, Appointments/Firsts, Awards, Military Exercises, ISRO/DRDO, Summits, Ramsar/Parks/GI Tags, Sports, Days/Themes, Books/Authors, Supreme Court/Polity, State Cabinet/District-Firsts).\n"
+        "If crime, routine politics, protest, transfer, accident, gossip, or vague speech with NO exam fact, return ONLY: {\"skip\": true}.\n\n"
+        "STEP 2 — EXHAUSTIVE, ZERO-CASUALTY EXAM DEPTH (STRICTLY NO SHALLOW SUMMARIES!):\n"
+        "NEVER write vague statements like 'several products got GI tags' or 'Eight Core Industries grew'. You MUST go into FULL UPSC/PCS EXAM DEPTH:\n"
+        "- If Eight Core Industries / IIP is in news: Explicitly list ALL 8 Core Industries by exact name AND their exact weightage % in descending order (Refinery Products 28.04%, Electricity 19.85%, Steel 17.92%, Coal 10.33%, Crude Oil 8.98%, Natural Gas 6.88%, Cement 5.37%, Fertilizers 2.63%; Total 40.27% of IIP), Base Year (2011-12), and Publisher (Office of Economic Adviser, DPIIT, Ministry of Commerce & Industry).\n"
+        "- If GI Tag is in news: Explicitly name the GI-tagged products AND their exact District/City/State (from the news), PLUS full GI basics (GI of Goods Act 1999, effective Sept 2003, GI Registry Chennai under DPIIT, 10-year renewable validity, India's first GI Tag Darjeeling Tea 2004).\n"
+        "- For ANY Index/Report: Publisher organization, India's exact rank & score, Top 3 countries, India's previous rank, and key parameters.\n"
+        "- If ANY Geographical Place / Water Body / Pass / Strait / Canal / River / Park / Corridor (India or World) is in news: Explicitly explain (a) What it actually is & exact location (Country/State/District/Continent), (b) What it connects or separates (Water bodies, Bordering Countries/States, Neighboring Seas/Landmarks — Map-based Prelims gold!), (c) Its Historical & Strategic/Geopolitical significance, and (d) Key Ecological/Economic features (Rivers, Tribes, Minerals, UNESCO/Ramsar status).\n"
+        "- If ANY Historical Event / Personality / Heritage Site / Temple / Dynasty is in news: Give exact period/century, founder/ruler, architectural style, key contributions, and UNESCO/ASI status.\n"
+        "- BASIC CONCEPT (मूल अवधारणा): For any Science/Tech/Economy/Polity/Disease/Environment topic, explain the core concept from scratch (e.g., Qubit/Superposition for Quantum, pathogen/transmission/vaccine for diseases, working mechanism for RBI/SEBI tools) so students do not need a separate basic book.\n"
+        "- INSTITUTION PROFILE (संस्था परिचय): Whenever any body/agency appears (ISRO, DRDO, RBI, SEBI, NITI Aayog, IMF, World Bank, WHO, UNESCO, etc.), give Full Form, Establishment Year, Headquarters, Nodal Ministry, Membership & India's role.\n"
+        "- COMPARATIVE ANALYSIS (तुलनात्मक अंतर): Where relevant, include a crisp contrast between related terms/bodies (e.g., National Park vs Wildlife Sanctuary, GDP vs GVA, IMF vs World Bank, Constitutional vs Statutory).\n"
+        "- HONEST PYQ CONCEPT LINKAGE: Mention likely UPSC/UPPSC/BPSC Prelims exam focus areas & PYQ concepts — NEVER invent fake PYQ years or fake past questions!\n"
+        "- For ANY Scheme/Mission/Treaty/Exercise/Award: Full current details FIRST, then complete STATIC BASIC FOUNDATION (Launch Year, Nodal Ministry, Constitutional Article/Act, Outlay, Eligibility, and Prelims Statement-Traps).\n\n"
+        "RETURN ONLY VALID JSON WITH THESE EXACT KEYS:\n"
+        "title_en, title_hi, why_in_news, why_in_news_hi, key_highlights (array of 7 to 9 deeply detailed strings covering Current Event + Complete Static Basics/Geography/History), key_highlights_hi (array of 7 to 9 deeply detailed Hindi strings), "
+        "prelims_facts (array of 7 crisp high-yield factual strings), prelims_facts_hi (array of 7 crisp Hindi strings), mains_perspective, mains_perspective_hi.\n\n"
+        "STRICT FORMAT RULES:\n"
+        "1. SHORT KEYWORD HEADLINE (title_en & title_hi): STRICTLY 3 to 7 words in crisp exam-keyword style (e.g., 'Eight Core Industries Growth & Weights', 'Madhya Pradesh GI Tags 2026', 'आठ कोर उद्योग: वृद्धि एवं भारांश'). NEVER write long newspaper sentences!\n"
+        "2. WHY IN NEWS (why_in_news / why_in_news_hi): 3 to 4 dense factual sentences covering exact date/month, ministry/body, exact numbers/names/districts, and why it matters now.\n"
+        "3. KEY HIGHLIGHTS (7 to 9 rich, multi-sentence bullets, each starting with a clear label):\n"
+        "   - Bullet 1 [Current Event in Full Detail]: Exact names, figures, winners, products, districts, or growth rates.\n"
+        "   - Bullet 2 [Complete List / Exact Breakdown]: Explicit enumeration of all sub-components, weights %, products + districts, articles, or participating nations.\n"
+        "   - Bullet 3 [Basic Static Foundation — UPSC/PCS Core]: Complete background of the institution, Act, Constitutional Article, Base Year, Headquarters, Parent Ministry, or Governing Mechanism.\n"
+        "   - Bullet 4 [Key Parameters / Eligibility / Financial Outlay]: Exact budget (₹ crore), targets, validity, methodology, or technical specs.\n"
+        "   - Bullet 5 [Historical / Comparative & State/District Angle]: First in India, previous year comparison, top state/country, or exact District/ODOP relevance.\n"
+        "   - Bullet 6 [Geographical / Historical / Map-Based Basics]: Exact location, bordering countries/states, what it connects/separates, and historical/strategic background.\n"
+        "   - Bullet 7 [Prelims Micro-Nuances & Statement Traps]: Subtle facts UPPSC/BPSC/UPSC Prelims twists in Statement 1 / Statement 2 questions.\n"
+        "4. PRELIMS & ONE-DAY FACTS (EXACTLY 7 sharp 'Label: Exact Value' one-liners covering every date, weightage, district, headquarters, ministry, article, and static GK fact).\n"
+        "5. MAINS PERSPECTIVE (3 to 4 substantive sentences covering GS significance, key challenge, and way forward).\n"
+        "6. PURE BILINGUAL QUALITY: Every *_hi field MUST be pure Devanagari Hindi (only standard acronyms like IIP/DPIIT/GI/RBI/ISRO in brackets). Every English field MUST be pure English.\n"
+        f"{ctx}Raw News Headline: {title}\nRSS Summary: {desc}{extra}"
     )
 
 
 def has_hi(val) -> bool:
     txt = " ".join(val) if isinstance(val, list) else str(val or "")
-    return len(re.findall(r"[\u0900-\u097F]", txt)) >= 6
+    return len(re.findall(r"[\u0900-\u097F]", txt)) >= 8
 
 
 def is_pure_en(val) -> bool:
@@ -243,7 +262,7 @@ def is_pure_en(val) -> bool:
     return len(re.findall(r"[\u0900-\u097F]", txt)) <= 3
 
 
-def trim_headline(h: str, max_words: int = 10) -> str:
+def trim_headline(h: str, max_words: int = 9) -> str:
     words = (h or "").strip().split()
     return " ".join(words[:max_words]).rstrip(".,;:-") if len(words) > max_words else (h or "").strip()
 
@@ -286,9 +305,9 @@ def call_gemini(prompt: str):
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}",
                 json={
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096, "responseMimeType": "application/json"},
                 },
-                timeout=30,
+                timeout=45,
             )
             if r.status_code == 429:
                 print(f"[gemini 429] {model} quota exhausted - skipping for rest of run")
@@ -321,10 +340,11 @@ def call_groq(prompt: str):
                 json={
                     "model": model,
                     "temperature": 0.2,
+                    "max_tokens": 4096,
                     "response_format": {"type": "json_object"},
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=30,
+                timeout=45,
             )
             if r.ok:
                 txt = r.json()["choices"][0]["message"]["content"]
@@ -374,11 +394,12 @@ def save_article(payload: dict) -> bool:
     return False
 
 
-def process_item(title, desc, section, gs_tag, state_name, existing_slugs):
+def process_item(title, desc, link, section, gs_tag, state_name, existing_slugs):
     raw_slug = make_slug(state_name or "ca", title)
     if raw_slug in existing_slugs:
         return False
-    prompt = build_prompt(title, desc, state_name)
+    full_excerpt = fetch_article_excerpt(link)
+    prompt = build_prompt(title, desc, full_excerpt, state_name)
     data = call_gemini(prompt)
     if not data:
         data = call_groq(prompt)
@@ -420,7 +441,7 @@ def process_item(title, desc, section, gs_tag, state_name, existing_slugs):
 
 
 def run():
-    print("[ETERNAL CIVIL ACADEMY] UPPSC + BPSC + One-Day PYQ Auto-Sync Starting...")
+    print("[ETERNAL CIVIL ACADEMY] Deep UPSC + UPPSC + BPSC + One-Day Auto-Sync Starting...")
     discover_gemini_models()
     existing_slugs = fetch_existing_slugs()
     print(f"[db] Existing articles cached for dedup: {len(existing_slugs)}")
@@ -431,12 +452,12 @@ def run():
     for feed in NATIONAL_FEEDS:
         if nat_count >= MAX_NATIONAL_PER_RUN:
             break
-        for title, desc, _ in fetch_rss_items(feed["url"], limit=12):
+        for title, desc, link in fetch_rss_items(feed["url"], limit=12):
             if nat_count >= MAX_NATIONAL_PER_RUN:
                 break
             sec = "central_scheme" if detect_scheme(title) else feed["section"]
             gs = detect_gs(title, desc, feed["gs"])
-            if process_item(title, desc, sec, gs, None, existing_slugs):
+            if process_item(title, desc, link, sec, gs, None, existing_slugs):
                 nat_count += 1
                 time.sleep(AI_PACE_SECONDS)
 
@@ -444,11 +465,11 @@ def run():
         if st_count >= MAX_STATE_PER_RUN:
             break
         for u in urls:
-            for title, desc, _ in fetch_rss_items(u, limit=10):
+            for title, desc, link in fetch_rss_items(u, limit=10):
                 if st_count >= MAX_STATE_PER_RUN:
                     break
                 sec = "state_scheme" if detect_scheme(title) else "state_ca"
-                if process_item(title, desc, sec, "State Special", state_name, existing_slugs):
+                if process_item(title, desc, link, sec, "State Special", state_name, existing_slugs):
                     st_count += 1
                     time.sleep(AI_PACE_SECONDS)
                     break
