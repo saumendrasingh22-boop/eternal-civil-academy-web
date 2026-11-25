@@ -30,6 +30,7 @@ jobs:
           ECA_WEBSITE_API_URL: ${{ secrets.ECA_WEBSITE_API_URL }}
           BOT_API_SECRET: ${{ secrets.BOT_API_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python automation_workers/stealth_auto_sync.py
