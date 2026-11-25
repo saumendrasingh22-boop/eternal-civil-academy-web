@@ -6,6 +6,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
+from email.utils import parsedate_to_datetime
 from html import unescape
 import requests
 
@@ -83,13 +84,13 @@ NEG_Q = "+-murder+-arrested+-protest+-marry+-rape+-accident+-bollywood+-viral+-b
 STATE_QUERY_CORE = "(yojana+OR+scheme+OR+cabinet+OR+GI+tag+OR+ODOP+OR+budget+OR+award+OR+ranking+OR+index+OR+expressway+OR+park+OR+first+OR+MoU)"
 
 STATE_FEEDS = {
-    "Uttar Pradesh": [f"https://news.google.com/rss/search?q=Uttar+Pradesh+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Bihar": [f"https://news.google.com/rss/search?q=Bihar+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Rajasthan": [f"https://news.google.com/rss/search?q=Rajasthan+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Madhya Pradesh": [f"https://news.google.com/rss/search?q=Madhya+Pradesh+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Haryana": [f"https://news.google.com/rss/search?q=Haryana+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Jharkhand": [f"https://news.google.com/rss/search?q=Jharkhand+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Uttarakhand": [f"https://news.google.com/rss/search?q=Uttarakhand+{STATE_QUERY_CORE}{NEG_Q}&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Uttar Pradesh": [f"https://news.google.com/rss/search?q=Uttar+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Bihar": [f"https://news.google.com/rss/search?q=Bihar+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Rajasthan": [f"https://news.google.com/rss/search?q=Rajasthan+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Madhya Pradesh": [f"https://news.google.com/rss/search?q=Madhya+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Haryana": [f"https://news.google.com/rss/search?q=Haryana+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Jharkhand": [f"https://news.google.com/rss/search?q=Jharkhand+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Uttarakhand": [f"https://news.google.com/rss/search?q=Uttarakhand+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
 }
 
 EXHAUSTED_GEMINI_MODELS = set()
@@ -167,6 +168,23 @@ def fetch_article_excerpt(link: str) -> str:
         return ""
 
 
+MAX_NEWS_AGE_DAYS = 4
+
+
+def is_recent_pubdate(pub_raw: str) -> bool:
+    """Rejects any RSS article older than MAX_NEWS_AGE_DAYS (4 days)."""
+    if not pub_raw:
+        return True
+    try:
+        dt = parsedate_to_datetime(pub_raw.strip())
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age = datetime.now(timezone.utc) - dt.astimezone(timezone.utc)
+        return age.total_seconds() <= MAX_NEWS_AGE_DAYS * 86400
+    except Exception:
+        return True
+
+
 def fetch_rss_items(url: str, limit: int = 12):
     scored = []
     try:
@@ -175,6 +193,9 @@ def fetch_rss_items(url: str, limit: int = 12):
             return []
         root = ET.fromstring(r.content)
         for item in root.findall(".//item")[:limit]:
+            pub_raw = (item.findtext("pubDate") or "").strip()
+            if not is_recent_pubdate(pub_raw):
+                continue
             title = strip_html(item.findtext("title") or "")
             desc = strip_html(item.findtext("description") or "")
             link = (item.findtext("link") or "").strip()
@@ -211,9 +232,44 @@ def discover_gemini_models():
     return ACTIVE_GEMINI_MODELS
 
 
-def build_prompt(title: str, desc: str, full_excerpt: str, state_name):
+
+DYNAMIC_CONTEXT_QUERIES = [
+    (["gi tag", "geographical indication"], "India+total+GI+tags+highest+state+DPIIT+latest"),
+    (["ramsar", "wetland"], "India+total+Ramsar+sites+highest+state+latest"),
+    (["tiger reserve"], "India+total+tiger+reserves+latest+NTCA"),
+    (["national park"], "India+total+national+parks+highest+state+latest"),
+    (["unesco", "world heritage"], "India+total+UNESCO+world+heritage+sites+latest"),
+]
+
+
+def fetch_live_dynamic_context(title: str, desc: str) -> str:
+    """Filter 5: Fetches live authentic snippets for frequently changing counts (GI Tags, Ramsar, Parks, UNESCO)."""
+    txt = f"{title} {desc}".lower()
+    for keys, query in DYNAMIC_CONTEXT_QUERIES:
+        if any(k in txt for k in keys):
+            try:
+                url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
+                r = requests.get(url, headers=HEADERS, timeout=10)
+                if r.ok:
+                    root = ET.fromstring(r.content)
+                    snips = []
+                    for it in root.findall(".//item")[:4]:
+                        t = strip_html(it.findtext("title") or "")
+                        pd = (it.findtext("pubDate") or "")[:16]
+                        if t:
+                            snips.append(f"[{pd}] {t}")
+                    if snips:
+                        return " | ".join(snips)[:800]
+            except Exception:
+                pass
+            break
+    return ""
+
+
+def build_prompt(title: str, desc: str, full_excerpt: str, live_ctx: str, state_name):
     ctx = f"Target State: {state_name} (Include exact District/City, State Cabinet/Budget/ODOP/GI Tag specifics)\n" if state_name else ""
     extra = f"\nSource Article Details:\n{full_excerpt}" if full_excerpt else ""
+    ctx_live = f"\nLive Authentic Reference Snippets (for latest counts/rankings):\n{live_ctx}" if live_ctx else ""
     return (
         "You are a senior UPSC Prelims, UPPSC Prelims, BPSC Prelims, RO/ARO & One-Day Exam Chief Editor for ETERNAL CIVIL ACADEMY (Drishti IAS + Vision IAS + Ghatna Chakra standard).\n\n"
         "STEP 1 — STRICT PYQ RELEVANCE GATE:\n"
@@ -229,6 +285,8 @@ def build_prompt(title: str, desc: str, full_excerpt: str, state_name):
         "- BASIC CONCEPT (मूल अवधारणा): For any Science/Tech/Economy/Polity/Disease/Environment topic, explain the core concept from scratch (e.g., Qubit/Superposition for Quantum, pathogen/transmission/vaccine for diseases, working mechanism for RBI/SEBI tools) so students do not need a separate basic book.\n"
         "- INSTITUTION PROFILE (संस्था परिचय): Whenever any body/agency appears (ISRO, DRDO, RBI, SEBI, NITI Aayog, IMF, World Bank, WHO, UNESCO, etc.), give Full Form, Establishment Year, Headquarters, Nodal Ministry, Membership & India's role.\n"
         "- COMPARATIVE ANALYSIS (तुलनात्मक अंतर): Where relevant, include a crisp contrast between related terms/bodies (e.g., National Park vs Wildlife Sanctuary, GDP vs GVA, IMF vs World Bank, Constitutional vs Statutory).\n"
+        "- 3-TIER LINKAGE (STATE -> NATIONAL -> GLOBAL): Whenever a State-specific or National figure appears (e.g., GI Tag, Ramsar Site, National Park, Tiger Reserve, UNESCO Site, Solar/GDP/Export), ALWAYS connect all 3 levels concisely: (1) State Fact & District, (2) India Total & Top/Leading Indian State (e.g., highest GI tags/Ramsar sites/Parks in India), and (3) Brief Global Context (e.g., WTO TRIPS/WIPO for GI, Ramsar Convention 1971 Iran & global leader, or global ranking).\n"
+        "- STRICT DATA AUTHENTICITY & REFERENCE-YEAR RULE (FILTER 6): For frequently changing totals (GI tags, Ramsar sites, National Parks, Tiger Reserves, UNESCO sites, Ranks), ALWAYS rely on the provided Source/Live Reference Snippets and mention the exact reference year/source (e.g., as per latest official data). NEVER guess or fabricate an unverified number!\n"
         "- HONEST PYQ CONCEPT LINKAGE: Mention likely UPSC/UPPSC/BPSC Prelims exam focus areas & PYQ concepts — NEVER invent fake PYQ years or fake past questions!\n"
         "- For ANY Scheme/Mission/Treaty/Exercise/Award: Full current details FIRST, then complete STATIC BASIC FOUNDATION (Launch Year, Nodal Ministry, Constitutional Article/Act, Outlay, Eligibility, and Prelims Statement-Traps).\n\n"
         "RETURN ONLY VALID JSON WITH THESE EXACT KEYS:\n"
@@ -248,7 +306,7 @@ def build_prompt(title: str, desc: str, full_excerpt: str, state_name):
         "4. PRELIMS & ONE-DAY FACTS (EXACTLY 7 sharp 'Label: Exact Value' one-liners covering every date, weightage, district, headquarters, ministry, article, and static GK fact).\n"
         "5. MAINS PERSPECTIVE (3 to 4 substantive sentences covering GS significance, key challenge, and way forward).\n"
         "6. PURE BILINGUAL QUALITY: Every *_hi field MUST be pure Devanagari Hindi (only standard acronyms like IIP/DPIIT/GI/RBI/ISRO in brackets). Every English field MUST be pure English.\n"
-        f"{ctx}Raw News Headline: {title}\nRSS Summary: {desc}{extra}"
+        f"{ctx}Raw News Headline: {title}\nRSS Summary: {desc}{extra}{ctx_live}"
     )
 
 
@@ -399,7 +457,8 @@ def process_item(title, desc, link, section, gs_tag, state_name, existing_slugs)
     if raw_slug in existing_slugs:
         return False
     full_excerpt = fetch_article_excerpt(link)
-    prompt = build_prompt(title, desc, full_excerpt, state_name)
+    live_ctx = fetch_live_dynamic_context(title, desc)
+    prompt = build_prompt(title, desc, full_excerpt, live_ctx, state_name)
     data = call_gemini(prompt)
     if not data:
         data = call_groq(prompt)
