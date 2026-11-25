@@ -34,6 +34,33 @@ import DualPdfButton from "@/components/DualPdfButton";
 import ExamCountdownBar from "@/components/ExamCountdownBar";
 
 export default function HomePage() {
+  const [premiumBooks, setPremiumBooks] = useState(PREMIUM_BOOK_COVERS);
+  useEffect(() => {
+    const normalize = (arr: any[]) => arr.map((b: any) => ({ ...b, priceInr: Number(b?.priceInr || 0), isPaid: Number(b?.priceInr || 0) > 0 }));
+    const loadBooks = () => {
+      try {
+        const raw = window.localStorage.getItem("eca_premium_books_v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setPremiumBooks(normalize(parsed));
+        }
+      } catch {}
+    };
+    loadBooks();
+    fetch("/api/cms-state?key=premium_books&_t=" + Date.now(), { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.synced && Array.isArray(d.value)) {
+          const norm = normalize(d.value);
+          setPremiumBooks(norm);
+          try { window.localStorage.setItem("eca_premium_books_v1", JSON.stringify(norm)); } catch {}
+        }
+      })
+      .catch(() => {});
+    window.addEventListener("eca-premium-books-updated", loadBooks);
+    return () => window.removeEventListener("eca-premium-books-updated", loadBooks);
+  }, []);
+
   // Dynamic Cover Page Carousel State (Controlled by Super Admin & Admin)
   const [heroSlides, setHeroSlides] = useState<CoverSlideItem[]>(DEFAULT_COVER_SLIDES);
   const [batches, setBatches] = useState<BatchItem[]>(DEFAULT_BATCHES);
@@ -534,7 +561,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            {PREMIUM_BOOK_COVERS.map((book) => (
+            {premiumBooks.map((book) => (
               <div
                 key={book.id}
                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
