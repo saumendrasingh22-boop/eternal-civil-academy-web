@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "premium_books", "custom_content", "site_settings"]);
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+const NO_CACHE = { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } };
+
+const ALLOWED_KEYS = new Set(["nocode_cms", "batches", "cover_slides", "live_tests", "site_settings", "premium_books", "custom_content", "daily_pdfs"]);
 const MAX_PAYLOAD_BYTES = 512 * 1024; // 500 KB max payload limit
 
 function getSupabaseAdmin() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return null;
   }
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { global: { fetch: (u, o) => fetch(u, { ...o, cache: "no-store" }) } });
 }
 
 // GET /api/cms-state?key=all OR ?key=nocode_cms
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
       for (const row of data) {
         values[row.state_key] = row.state_value;
       }
-      return NextResponse.json({ synced: true, values });
+      return NextResponse.json({ synced: true, values }, NO_CACHE);
     }
 
     if (!ALLOWED_KEYS.has(key)) {
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest) {
     if (error || !data) {
       return NextResponse.json({ synced: false, value: null });
     }
-    return NextResponse.json({ synced: true, value: data.state_value });
+    return NextResponse.json({ synced: true, value: data.state_value }, NO_CACHE);
   } catch {
     return NextResponse.json({ synced: false, value: null });
   }
