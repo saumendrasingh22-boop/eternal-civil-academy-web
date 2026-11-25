@@ -1,3 +1,4 @@
+import IosInstallBanner from "@/components/IosInstallBanner";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -111,6 +112,7 @@ export default function RootLayout({
         <Footer />
         <StudentInquiryWidget />
         <MobileBottomNav />
+              <IosInstallBanner />
       </body>
     </html>
   );
