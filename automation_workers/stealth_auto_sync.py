@@ -41,6 +41,13 @@ JUNK_KEYWORDS = [
     "traffic jam", "robbery", "theft", "scamster", "elopes", "boyfriend", "girlfriend",
     "wife", "husband", "bail plea", "fir lodged", "chargesheet", "constable", "liquor",
     "encroachment", "demolition", "transfer of", "sho suspended", "road mishap",
+    "stock market", "share market", "sensex", "nifty", "market holiday", "markets closed",
+    "trading holiday", "will remain closed", "remains closed", "to remain shut", "bank holiday",
+    "public holiday", "dry day", "gold price", "silver price", "petrol price", "diesel price",
+    "share price", "quarterly results", "ipo opens", "ipo closes", "dividend", "rupee opens",
+    "admit card", "registration opens", "application opens", "last date to apply", "apply online",
+    "portal opens", "portal closed", "window opens", "window closes", "schools closed",
+    "train cancelled", "flight delayed", "power cut", "match preview", "playing xi",
 ]
 
 PYQ_WEIGHTED_SIGNALS = [
@@ -53,9 +60,12 @@ PYQ_WEIGHTED_SIGNALS = [
         "naval exercise", "air exercise", "joint exercise", "isro", "drdo", "missile",
         "satellite", "gaganyaan", "chandrayaan", "aditya-l1", "odop",
         "one district one product", "first in india", "india's first", "country's first",
+        "first woman", "highest civilian", "free trade agreement", "fta", "cepa",
+        "cyclone", "typhoon", "operation ", "renamed", "brand ambassador", "nfhs",
+        "passes away", "obituary", "mahotsav", "state visit", "elected president", "prime minister of",
     ]),
     (3, [
-        "yojana", "scheme", "mission", "abhiyan", "portal", "app launched", "cabinet approves",
+        "yojana", "scheme", "mission", "abhiyan", "national portal", "cabinet approves",
         "appointed", "new chairman", "new governor", "new cji", "election commissioner",
         "rbi governor", "sebi chief", "summit", "g20", "brics", "sco", "quad", "asean",
         "cop29", "cop30", "cop31", "budget", "economic survey", "repo rate", "monetary policy",
@@ -84,13 +94,13 @@ NEG_Q = "+-murder+-arrested+-protest+-marry+-rape+-accident+-bollywood+-viral+-b
 STATE_QUERY_CORE = "(yojana+OR+scheme+OR+cabinet+OR+GI+tag+OR+ODOP+OR+budget+OR+award+OR+ranking+OR+index+OR+expressway+OR+park+OR+first+OR+MoU)"
 
 STATE_FEEDS = {
-    "Uttar Pradesh": [f"https://news.google.com/rss/search?q=Uttar+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Bihar": [f"https://news.google.com/rss/search?q=Bihar+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Rajasthan": [f"https://news.google.com/rss/search?q=Rajasthan+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Madhya Pradesh": [f"https://news.google.com/rss/search?q=Madhya+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Haryana": [f"https://news.google.com/rss/search?q=Haryana+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Jharkhand": [f"https://news.google.com/rss/search?q=Jharkhand+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
-    "Uttarakhand": [f"https://news.google.com/rss/search?q=Uttarakhand+{STATE_QUERY_CORE}{NEG_Q}+when:3d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Uttar Pradesh": [f"https://news.google.com/rss/search?q=Uttar+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Bihar": [f"https://news.google.com/rss/search?q=Bihar+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Rajasthan": [f"https://news.google.com/rss/search?q=Rajasthan+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Madhya Pradesh": [f"https://news.google.com/rss/search?q=Madhya+Pradesh+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Haryana": [f"https://news.google.com/rss/search?q=Haryana+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Jharkhand": [f"https://news.google.com/rss/search?q=Jharkhand+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
+    "Uttarakhand": [f"https://news.google.com/rss/search?q=Uttarakhand+{STATE_QUERY_CORE}{NEG_Q}+when:2d&hl=en-IN&gl=IN&ceid=IN:en"],
 }
 
 EXHAUSTED_GEMINI_MODELS = set()
@@ -168,21 +178,23 @@ def fetch_article_excerpt(link: str) -> str:
         return ""
 
 
-MAX_NEWS_AGE_DAYS = 4
+MAX_NEWS_AGE_DAYS = 2
 
 
-def is_recent_pubdate(pub_raw: str) -> bool:
-    """Rejects any RSS article older than MAX_NEWS_AGE_DAYS (4 days)."""
+def parse_recent_pubdate_ist(pub_raw: str):
+    """Returns IST YYYY-MM-DD ONLY if article is <= 48 hours old; otherwise returns None (strictly rejected)."""
     if not pub_raw:
-        return True
+        return None
     try:
         dt = parsedate_to_datetime(pub_raw.strip())
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         age = datetime.now(timezone.utc) - dt.astimezone(timezone.utc)
-        return age.total_seconds() <= MAX_NEWS_AGE_DAYS * 86400
+        if age.total_seconds() < -3600 or age.total_seconds() > MAX_NEWS_AGE_DAYS * 86400:
+            return None
+        return dt.astimezone(IST).strftime("%Y-%m-%d")
     except Exception:
-        return True
+        return None
 
 
 def fetch_rss_items(url: str, limit: int = 12):
@@ -194,19 +206,20 @@ def fetch_rss_items(url: str, limit: int = 12):
         root = ET.fromstring(r.content)
         for item in root.findall(".//item")[:limit]:
             pub_raw = (item.findtext("pubDate") or "").strip()
-            if not is_recent_pubdate(pub_raw):
+            pub_ist = parse_recent_pubdate_ist(pub_raw)
+            if not pub_ist:
                 continue
             title = strip_html(item.findtext("title") or "")
             desc = strip_html(item.findtext("description") or "")
             link = (item.findtext("link") or "").strip()
             if len(title) >= 16:
                 sc = exam_pyq_score(title, desc)
-                if sc >= 2:
-                    scored.append((sc, title, desc[:1200], link))
+                if sc >= 3:
+                    scored.append((sc, title, desc[:1200], link, pub_ist))
     except Exception as e:
         print(f"[rss skip] {url[:60]} -> {e}")
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [(t, d, l) for _, t, d, l in scored]
+    return [(t, d, l, pd) for _, t, d, l, pd in scored]
 
 
 def discover_gemini_models():
@@ -274,7 +287,8 @@ def build_prompt(title: str, desc: str, full_excerpt: str, live_ctx: str, state_
         "You are a senior UPSC Prelims, UPPSC Prelims, BPSC Prelims, RO/ARO & One-Day Exam Chief Editor for ETERNAL CIVIL ACADEMY (Drishti IAS + Vision IAS + Ghatna Chakra standard).\n\n"
         "STEP 1 — STRICT PYQ RELEVANCE GATE:\n"
         "Accept ONLY high-yield exam news (Indices/Reports, Eight Core/IIP/RBI/Budget, Government Schemes/Portals, Appointments/Firsts, Awards, Military Exercises, ISRO/DRDO, Summits, Ramsar/Parks/GI Tags, Sports, Days/Themes, Books/Authors, Supreme Court/Polity, State Cabinet/District-Firsts).\n"
-        "If crime, routine politics, protest, transfer, accident, gossip, or vague speech with NO exam fact, return ONLY: {\"skip\": true}.\n\n"
+        "APPLY THE 6-MONTH EXAM TEST: Ask yourself — Can UPSC, UPPSC, BPSC, or SSC ask an exam question on this exact news 6 months from now? If NO, return ONLY: {\"skip\": true}.\n"
+        "STRICTLY REJECT (return {\"skip\": true}): stock market holidays, Sensex/Nifty/gold/fuel daily fluctuations, routine registration/application portal opening or closing, bank/school holidays, admit cards, corporate IPO/earnings, routine previews ('will be held tomorrow'), crime, politics, protest, transfer, accident, gossip, or vague speeches.\n\n"
         "STEP 2 — EXHAUSTIVE, ZERO-CASUALTY EXAM DEPTH (STRICTLY NO SHALLOW SUMMARIES!):\n"
         "NEVER write vague statements like 'several products got GI tags' or 'Eight Core Industries grew'. You MUST go into FULL UPSC/PCS EXAM DEPTH:\n"
         "- If Eight Core Industries / IIP is in news: Explicitly list ALL 8 Core Industries by exact name AND their exact weightage % in descending order (Refinery Products 28.04%, Electricity 19.85%, Steel 17.92%, Coal 10.33%, Crude Oil 8.98%, Natural Gas 6.88%, Cement 5.37%, Fertilizers 2.63%; Total 40.27% of IIP), Base Year (2011-12), and Publisher (Office of Economic Adviser, DPIIT, Ministry of Commerce & Industry).\n"
@@ -452,7 +466,7 @@ def save_article(payload: dict) -> bool:
     return False
 
 
-def process_item(title, desc, link, section, gs_tag, state_name, existing_slugs):
+def process_item(title, desc, link, pub_ist, section, gs_tag, state_name, existing_slugs):
     raw_slug = make_slug(state_name or "ca", title)
     if raw_slug in existing_slugs:
         return False
@@ -472,7 +486,7 @@ def process_item(title, desc, link, section, gs_tag, state_name, existing_slugs)
     if slug in existing_slugs:
         return False
 
-    today_ist = datetime.now(IST).strftime("%Y-%m-%d")
+    today_ist = pub_ist or datetime.now(IST).strftime("%Y-%m-%d")
     payload = {
         "slug": slug,
         "section_type": section,
@@ -511,12 +525,12 @@ def run():
     for feed in NATIONAL_FEEDS:
         if nat_count >= MAX_NATIONAL_PER_RUN:
             break
-        for title, desc, link in fetch_rss_items(feed["url"], limit=12):
+        for title, desc, link, pub_ist in fetch_rss_items(feed["url"], limit=12):
             if nat_count >= MAX_NATIONAL_PER_RUN:
                 break
             sec = "central_scheme" if detect_scheme(title) else feed["section"]
             gs = detect_gs(title, desc, feed["gs"])
-            if process_item(title, desc, link, sec, gs, None, existing_slugs):
+            if process_item(title, desc, link, pub_ist, sec, gs, None, existing_slugs):
                 nat_count += 1
                 time.sleep(AI_PACE_SECONDS)
 
@@ -524,11 +538,11 @@ def run():
         if st_count >= MAX_STATE_PER_RUN:
             break
         for u in urls:
-            for title, desc, link in fetch_rss_items(u, limit=10):
+            for title, desc, link, pub_ist in fetch_rss_items(u, limit=10):
                 if st_count >= MAX_STATE_PER_RUN:
                     break
                 sec = "state_scheme" if detect_scheme(title) else "state_ca"
-                if process_item(title, desc, link, sec, "State Special", state_name, existing_slugs):
+                if process_item(title, desc, link, pub_ist, sec, "State Special", state_name, existing_slugs):
                     st_count += 1
                     time.sleep(AI_PACE_SECONDS)
                     break
