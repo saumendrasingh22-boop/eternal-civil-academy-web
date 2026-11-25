@@ -9,7 +9,7 @@ import CloudStateHydrator from "@/components/CloudStateHydrator";
 import StudentInquiryWidget from "@/components/StudentInquiryWidget";
 
 const inter = Inter({ subsets: ["latin"] });
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://eternalcivilacademy.com").replace(/\/$/, "");
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.eternalcivilacademy.com").replace(/\/$/, "");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "State Special Current Affairs",
   ],
   manifest: "/manifest.json",
-  alternates: {
+  alternates: { canonical: siteUrl,
     types: { "application/rss+xml": `${siteUrl}/rss.xml` },
   },
   icons: {

@@ -5,7 +5,7 @@ import { DEFAULT_BATCHES } from "@/lib/batchesStore";
 import { STUDENT_HUB_TOOLS } from "@/lib/studentHubCatalog";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://eternalcivilacademy.com").replace(/\/$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.eternalcivilacademy.com").replace(/\/$/, "");
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -31,8 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ].map((route) => ({
     url: `${siteUrl}${route}`,
     lastModified: now,
-    changeFrequency: route === "" || route === "/current-affairs" ? "hourly" : "daily",
-    priority: route === "" ? 1.0 : route === "/current-affairs" || route === "/batches" ? 0.9 : 0.8,
+    changeFrequency: route === "" || route === "/current-affairs" || route === "/test-series" ? "hourly" : "daily",
+    priority: route === "" || route === "/current-affairs" || route === "/test-series" ? 1.0 : route === "/state-special" ? 0.85 : 0.7,
   }));
 
   const caSlugs = new Set<string>(STRUCTURED_CURRENT_AFFAIRS.map((a) => a.slug));
@@ -82,7 +82,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${siteUrl}/student-hub/${t.slug}`,
     lastModified: now,
     changeFrequency: "weekly",
-    priority: 0.9,
+    priority: 0.7,
   }));
   const stateEntries: MetadataRoute.Sitemap = STATES_LIST.map((st) => ({
     url: `${siteUrl}/state-special/${st.toLowerCase().replace(/\s+/g, "-")}`,
