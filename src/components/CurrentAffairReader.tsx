@@ -94,7 +94,7 @@ export default function CurrentAffairReader({
           {isHi ? "खबरों में क्यों है (Why in News)" : "Why in News"}
         </h2>
         <p className="text-sm sm:text-base text-slate-800 mt-1.5 leading-relaxed">
-          <RichText text={renderBoldText(loc.whyInNews)} boldClassName="font-bold text-[#0B1B3D]" />
+          <RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" />
         </p>
       </section>
 
@@ -132,7 +132,7 @@ export default function CurrentAffairReader({
           {isHi ? "मुख्य परीक्षा दृष्टिकोण (Mains Perspective)" : "Mains Perspective"}
         </h2>
         <p className="text-sm mt-1.5 leading-relaxed text-slate-100">
-          <RichText text={renderBoldText(loc.mainsPerspective, true)} boldClassName="font-bold text-yellow-200" />
+          <RichText text={loc.mainsPerspective} boldClassName="font-bold text-yellow-200" />
         </p>
       </section>
     </div>
