@@ -11,7 +11,7 @@ const ALL_CLOUD_KEYS: { apiKey: string; storageKey: string }[] = [
   { apiKey: "batches", storageKey: "eca_batches_store_v1" },
   { apiKey: "cover_slides", storageKey: "eca_cover_page_slides_v1" },
   { apiKey: "live_tests", storageKey: "eca_live_mock_tests_v1" },
-  { apiKey: "site_settings", storageKey: "eca_site_settings_v1" },
+  { apiKey: "site_settings", storageKey: "eca_super_admin_site_settings_v2" },
   { apiKey: "premium_books", storageKey: "eca_premium_books_v1" },
   { apiKey: "custom_content", storageKey: "eca_custom_content_v1" },
 ];

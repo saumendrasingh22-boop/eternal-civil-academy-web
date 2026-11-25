@@ -1,3 +1,4 @@
+import { syncCmsKeyToCloud } from "@/lib/adminTokenHelper";
 import { getAdminAuthHeaders } from "@/lib/adminTokenHelper";
 export interface SocialLinkItem {
   id: string;
@@ -85,5 +86,6 @@ export function saveSiteSettings(settings: SiteContactAndSocialSettings) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   window.dispatchEvent(new Event("eca-settings-updated"));
+  syncCmsKeyToCloud("site_settings", settings);
   fetch("/api/cms-state", { method: "POST", headers: getAdminAuthHeaders(), body: JSON.stringify({ key: "site_settings", value: settings }) }).catch(() => {});
 }
