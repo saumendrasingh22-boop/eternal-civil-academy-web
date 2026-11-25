@@ -136,7 +136,7 @@ export default function CurrentAffairsPage() {
                 <div className="text-xs font-extrabold text-[#0B1B3D] uppercase">
                   {lang === "hi" ? "खबरों में क्यों है (Why in News)" : "Why in News"}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-700 mt-1"><RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" /></p>
+                <p className="text-xs sm:text-sm text-slate-700 mt-1"><RichText text={(loc.whyInNews || "").replace(/\*\*/g, "")} boldClassName="font-bold text-[#0B1B3D]" /></p>
               </div>
 
               <div className="mt-3 flex items-center justify-between pt-2">

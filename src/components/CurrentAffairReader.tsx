@@ -6,6 +6,26 @@ import { Star, Languages } from "lucide-react";
 import { BilingualCurrentAffairItem, getLocalizedCa } from "@/lib/bilingualCaMap";
 import RichText from "@/components/RichText";
 
+
+function renderBoldText(raw: string, darkBg = false) {
+  const txt = String(raw || "");
+  if (!txt) return null;
+  const strongCls = darkBg ? "font-extrabold text-yellow-200" : "font-extrabold text-[#0B1B3D]";
+  let normalized = txt;
+  const colonIdx = normalized.indexOf(":");
+  if (colonIdx > 0 && colonIdx <= 65 && !normalized.slice(0, colonIdx).includes("**")) {
+    normalized = "**" + normalized.slice(0, colonIdx + 1) + "**" + normalized.slice(colonIdx + 1);
+  }
+  const parts = normalized.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={i} className={strongCls}>{part.slice(2, -2)}</strong>
+    ) : (
+      <React.Fragment key={i}>{part}</React.Fragment>
+    )
+  );
+}
+
 export default function CurrentAffairReader({
   article,
 }: {
@@ -74,7 +94,7 @@ export default function CurrentAffairReader({
           {isHi ? "खबरों में क्यों है (Why in News)" : "Why in News"}
         </h2>
         <p className="text-sm sm:text-base text-slate-800 mt-1.5 leading-relaxed">
-          <RichText text={loc.whyInNews} boldClassName="font-bold text-[#0B1B3D]" />
+          <RichText text={renderBoldText(loc.whyInNews)} boldClassName="font-bold text-[#0B1B3D]" />
         </p>
       </section>
 
@@ -112,7 +132,7 @@ export default function CurrentAffairReader({
           {isHi ? "मुख्य परीक्षा दृष्टिकोण (Mains Perspective)" : "Mains Perspective"}
         </h2>
         <p className="text-sm mt-1.5 leading-relaxed text-slate-100">
-          <RichText text={loc.mainsPerspective} boldClassName="font-bold text-yellow-200" />
+          <RichText text={renderBoldText(loc.mainsPerspective, true)} boldClassName="font-bold text-yellow-200" />
         </p>
       </section>
     </div>

@@ -300,7 +300,7 @@ def build_prompt(title: str, desc: str, full_excerpt: str, live_ctx: str, state_
         "prelims_facts (array of 4 to 6 crisp Prelims/One-Day facts), prelims_facts_hi (array of 4 to 6 matching Hindi facts), mains_perspective, mains_perspective_hi.\n\n"
         "RULES:\n"
         "1. SHORT KEYWORD HEADLINE (3 to 7 words, e.g., 'National Gopal Ratna Award 2026' / 'राष्ट्रीय गोपाल रत्न पुरस्कार 2026').\n"
-        "2. NATURAL SUBHEADINGS in key_highlights: Give each bullet a short, natural topic-specific label (e.g., 'Key Features:', 'All 8 Core Industries & Weights:', 'Location & Connectivity:', 'About DPIIT:') — NEVER use generic robotic labels like 'Bullet 1' or 'Current Event in Full Detail'.\n"
+        "2. BOLD SUBHEADINGS & IMPORTANT PRELIMS FACTS: Wrap EVERY bullet's lead-in subheading before ':' AND EVERY important Prelims fact (exact dates, years, numbers, percentages, ranks, winners, ministries, institutions, districts, Constitutional Articles, Acts) in **bold** (e.g., '**Nodal Ministry:** Launched in **2024** by **Ministry of New and Renewable Energy** with **₹78,000** subsidy.'). NEVER use robotic labels like 'Bullet 1'.\n"
         "3. PURE BILINGUAL: Every *_hi field MUST be natural, pure Devanagari Hindi (keep standard acronyms like RBI/ISRO/GI/IIP in brackets if helpful). Every English field MUST be pure English.\n"
         f"{ctx}Raw Headline: {title}\nSummary: {desc}{extra}{ctx_live}"
     )
