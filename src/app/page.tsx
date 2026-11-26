@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import HomeNcertQuizCard from "@/components/HomeNcertQuizCard";
+import HomeCaQuizCard from "@/components/HomeCaQuizCard";
 import {
   Newspaper,
   FileCheck2,
@@ -383,85 +384,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Column 3: Official Commission Notifications + Syllabus Shortcut (4 cols) */}
-            <div className="lg:col-span-4 space-y-5">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-[#0B1B3D] text-white px-5 py-3.5 flex items-center justify-between">
-                  <h2 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-yellow-400" /> Notifications
-                  </h2>
-                  <Link href="/notifications" className="text-xs font-bold text-yellow-300 hover:underline">
-                    All Commissions
-                  </Link>
-                </div>
-
-                {/* Commission Filter Pills */}
-                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex gap-1.5 overflow-x-auto">
-                  <button
-                    onClick={() => setActiveCommission("ALL")}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold shrink-0 ${
-                      activeCommission === "ALL"
-                        ? "bg-[#E60000] text-white"
-                        : "bg-white border border-slate-200 text-slate-700"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {cms.commissions.map((comm) => (
-                    <button
-                      key={comm}
-                      onClick={() => setActiveCommission(comm)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold shrink-0 ${
-                        activeCommission === comm
-                          ? "bg-[#0B1B3D] text-white"
-                          : "bg-white border border-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {comm}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                  {filteredNotifications.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.pdfUrl}
-                      className="p-3.5 flex items-start justify-between gap-2 hover:bg-red-50/40 transition block"
-                    >
-                      <div>
-                        <span className="inline-block bg-blue-50 text-[#0B1B3D] text-[10px] font-extrabold px-2 py-0.5 rounded mr-1.5">
-                          {item.commission}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-semibold">{item.date}</span>
-                        <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">
-                          {item.title}
-                        </p>
-                      </div>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#E60000] shrink-0 mt-1" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dedicated Syllabus Card */}
-              <div className="bg-gradient-to-r from-[#0B1B3D] to-[#1A3570] rounded-2xl p-5 text-white shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-extrabold text-base">Syllabus</h3>
-                    <p className="text-xs text-slate-300 mt-0.5">
-                      {cms.commissions.join(" • ")}
-                    </p>
-                  </div>
-                  <Link
-                    href="/syllabus"
-                    className="bg-[#E60000] hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition"
-                  >
-                    Open →
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <HomeCaQuizCard />
           </div>
         </section>
       )}

@@ -11,6 +11,8 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 GEMINI_KEY = (os.getenv("QUIZ_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
 GROQ_KEY = (os.getenv("QUIZ_GROQ_API_KEY") or os.getenv("GROQ_API_KEY") or "").strip()
+SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").strip().rstrip("/")
+SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
 BOT_SECRET = (os.getenv("BOT_API_SECRET") or "").strip()
 GITHUB_TOKEN = (os.getenv("GITHUB_TOKEN") or "").strip()
 REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-academy-web").strip()
@@ -451,12 +453,16 @@ def _fmt_rich_html(text: str) -> str:
     return "".join(out)
 
 
-def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
+def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str, quiz_kind: str = "ncert"):
     from weasyprint import HTML
 
     is_hi = lang == "hi"
-    tag_lbl = "दैनिक NCERT क्विज़" if is_hi else "Daily NCERT Quiz"
-    title = f"दैनिक NCERT क्विज़ (20 प्रश्न) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 Questions) — {date_str}"
+    if quiz_kind == "ca":
+        tag_lbl = "दैनिक करंट अफेयर्स क्विज़" if is_hi else "Daily Current Affairs Quiz"
+        title = f"दैनिक करंट अफेयर्स क्विज़ (5 प्रश्न) — {date_str}" if is_hi else f"Daily Current Affairs Quiz (5 Questions) — {date_str}"
+    else:
+        tag_lbl = "दैनिक NCERT क्विज़" if is_hi else "Daily NCERT Quiz"
+        title = f"दैनिक NCERT क्विज़ (20 प्रश्न) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 Questions) — {date_str}"
 
     logo_src = "https://www.eternalcivilacademy.com/logo.jpg"
     for cand in ("public/logo.jpg", "public/logo.png", "public/icon-192.png"):
@@ -680,6 +686,117 @@ def upload_to_release(file_path: str, content_type: str) -> str:
     return up.json()["browser_download_url"]
 
 
+def fetch_latest_ca_context() -> str:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return ""
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/current_affairs?select=title,why_in_news,prelims_facts,published_date&order=created_at.desc&limit=12",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+            timeout=20,
+        )
+        if not r.ok:
+            return ""
+        lines = []
+        for row in r.json()[:10]:
+            t = row.get("title") or ""
+            w = row.get("why_in_news") or ""
+            f = " | ".join(row.get("prelims_facts") or []) if isinstance(row.get("prelims_facts"), list) else str(row.get("prelims_facts") or "")
+            lines.append(f"- {t}: {w} ({f[:240]})")
+        return "\n".join(lines)
+    except Exception as e:
+        print(f"[CA context warn] {e}")
+        return ""
+
+
+def sync_daily_ca_quiz(today_ist: str, is_manual: bool, rebuild_only: bool):
+    existing_ca = cms_get("daily_ca_quizzes") or []
+    if not isinstance(existing_ca, list):
+        existing_ca = []
+
+    if rebuild_only:
+        print(f"[REBUILD CA PDFs] Re-rendering {len(existing_ca)} CA quiz(zes) with 0 AI calls...")
+        for entry in existing_ca:
+            if not isinstance(entry, dict) or not entry.get("jsonUrl") or not entry.get("date"):
+                continue
+            dt = entry["date"]
+            jr = requests.get(entry["jsonUrl"], timeout=25)
+            jr.raise_for_status()
+            qs = jr.json().get("questions", [])
+            if not qs:
+                continue
+            en_p = f"/tmp/ECA_Daily_CA_Quiz_English_{dt}.pdf"
+            hi_p = f"/tmp/ECA_Daily_CA_Quiz_Hindi_{dt}.pdf"
+            render_branded_pdf(qs, dt, "en", en_p, quiz_kind="ca")
+            render_branded_pdf(qs, dt, "hi", hi_p, quiz_kind="ca")
+            entry["englishPdfUrl"] = upload_to_release(en_p, "application/pdf")
+            entry["hindiPdfUrl"] = upload_to_release(hi_p, "application/pdf")
+        cms_post("daily_ca_quizzes", existing_ca)
+        return
+
+    if not is_manual and any(t.get("date") == today_ist for t in existing_ca if isinstance(t, dict)):
+        print(f"[SKIP CA] Daily CA Quiz for {today_ist} already published.")
+        return
+
+    ca_ctx = fetch_latest_ca_context()
+    ca_avoid = []
+    for old in existing_ca[:60]:
+        if not isinstance(old, dict) or old.get("date") == today_ist:
+            continue
+        try:
+            if old.get("jsonUrl"):
+                jr = requests.get(old["jsonUrl"], timeout=12)
+                if jr.ok:
+                    for q in jr.json().get("questions", []):
+                        if q.get("questionEn"):
+                            ca_avoid.append(q["questionEn"])
+        except Exception:
+            pass
+
+    ca_spec = f"""- 5 Current Affairs MCQs strictly based on these verified recent news items (subject: "Current Affairs"):
+{ca_ctx or "Latest verified Indian national, economy, polity, environment, science & international news."}"""
+
+    ca_qs = generate_verified_batch(
+        today_ist,
+        ca_spec,
+        5,
+        ca_avoid,
+        [_q_tokens(t) for t in ca_avoid if t],
+        set(),
+        "DailyCA-5Q",
+    )
+    if len(ca_qs) < 5:
+        print(f"[WARN CA] Only {len(ca_qs)}/5 CA Qs verified — skipping CA publish.")
+        return
+
+    ca_qs = ca_qs[:5]
+    for i, q in enumerate(ca_qs, 1):
+        q["id"] = i
+
+    title = f"Daily Current Affairs Quiz (5 MCQs) — {today_ist}"
+    json_p = f"/tmp/ECA_Daily_CA_Quiz_{today_ist}.json"
+    en_p = f"/tmp/ECA_Daily_CA_Quiz_English_{today_ist}.pdf"
+    hi_p = f"/tmp/ECA_Daily_CA_Quiz_Hindi_{today_ist}.pdf"
+    with open(json_p, "w", encoding="utf-8") as f:
+        json.dump({"date": today_ist, "title": title, "questions": ca_qs}, f, ensure_ascii=False, indent=2)
+
+    render_branded_pdf(ca_qs, today_ist, "en", en_p, quiz_kind="ca")
+    render_branded_pdf(ca_qs, today_ist, "hi", hi_p, quiz_kind="ca")
+
+    new_entry = {
+        "id": f"daily-ca-quiz-{today_ist}",
+        "date": today_ist,
+        "title": title,
+        "totalQuestions": 5,
+        "jsonUrl": upload_to_release(json_p, "application/json"),
+        "englishPdfUrl": upload_to_release(en_p, "application/pdf"),
+        "hindiPdfUrl": upload_to_release(hi_p, "application/pdf"),
+    }
+    updated_ca = sorted([new_entry] + [t for t in existing_ca if isinstance(t, dict) and t.get("date") != today_ist], key=lambda x: x.get("date", ""), reverse=True)
+    cms_post("daily_ca_quizzes", updated_ca)
+    print(f"[SUCCESS CA] Published 5/5 Daily Current Affairs Quiz + EN/HI PDFs for {today_ist}")
+
+
 def main():
     custom_dt = (os.getenv("TARGET_DATE") or "").strip()
     today_ist = custom_dt if re.fullmatch(r"\d{4}-\d{2}-\d{2}", custom_dt) else datetime.now(IST).strftime("%Y-%m-%d")
@@ -708,11 +825,13 @@ def main():
             entry["hindiPdfUrl"] = upload_to_release(hi_p, "application/pdf")
             print(f"[REBUILD OK] {dt}")
         cms_post("daily_practice_tests", existing_tests)
+        sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=True)
         print("[REBUILD COMPLETE] All existing PDFs updated cleanly!")
         return
 
     if not is_manual and any(t.get("date") == today_ist for t in existing_tests if isinstance(t, dict)):
         print(f"[SKIP] Daily NCERT Quiz for {today_ist} already published.")
+        sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
         return
 
     # 60-day history (excluding today on manual re-run)
@@ -806,6 +925,7 @@ def main():
         raise RuntimeError("Failed to update daily_practice_tests in CMS")
 
     print(f"[SUCCESS] Published {len(all_qs)}/20 Verified Daily NCERT Quiz + Branded EN/HI PDFs for {today_ist}")
+    sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
 
 
 if __name__ == "__main__":
