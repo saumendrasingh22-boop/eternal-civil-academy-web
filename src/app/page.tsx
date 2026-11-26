@@ -351,7 +351,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="divide-y divide-slate-100">
-                  {liveCa.length === 0 ? (<div className="p-5 text-xs text-slate-500">Loading latest Daily Current Affairs...</div>) : liveCa.slice(0, 6).map((ca) => (
+                  {liveCa.length === 0 ? (<div className="p-5 text-xs text-slate-500">Loading latest Daily Current Affairs...</div>) : liveCa.slice(0, 4).map((ca) => (
                     <div key={ca.id} className="p-4 hover:bg-slate-50 transition">
                       <div className="flex items-center gap-2 text-[11px] mb-1">
                         <span className="bg-red-50 text-[#E60000] font-bold px-2 py-0.5 rounded">
