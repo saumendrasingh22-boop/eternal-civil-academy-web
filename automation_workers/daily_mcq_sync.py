@@ -96,16 +96,19 @@ def _normalize_opts(raw_opts):
         return {k: str(raw_opts[i]).strip() for i, k in enumerate(("A", "B", "C", "D"))}
     if isinstance(raw_opts, dict):
         out = {}
-        for k in ("A", "B", "C", "D"):
+        for idx, k in enumerate(("A", "B", "C", "D"), 1):
             val = None
-            for cand in (k, k.lower(), f"{k})", f"{k}.", f"({k})"):
+            for cand in (k, k.lower(), f"{k})", f"{k}.", f"({k})", f"option{k}", f"Option {k}", str(idx)):
                 if cand in raw_opts and str(raw_opts[cand]).strip():
                     val = str(raw_opts[cand]).strip()
                     break
-            if val is None:
-                return None
-            out[k] = val
-        return out
+            if val is not None:
+                out[k] = val
+        if len(out) == 4:
+            return out
+        vals = [str(v).strip() for v in raw_opts.values() if str(v).strip()]
+        if len(vals) >= 4:
+            return {k: vals[i] for i, k in enumerate(("A", "B", "C", "D"))}
     return None
 
 
@@ -130,8 +133,8 @@ def validate_question_strict(q: dict):
         print(f"[L3-DROP] short question en={len(q_en)} hi={len(q_hi)}")
         return None
 
-    opts_en = _normalize_opts(q.get("optionsEn"))
-    opts_hi = _normalize_opts(q.get("optionsHi"))
+    opts_en = _normalize_opts(q.get("optionsEn") or q.get("options_en") or q.get("options"))
+    opts_hi = _normalize_opts(q.get("optionsHi") or q.get("options_hi"))
     if not opts_en or not opts_hi:
         print("[L3-DROP] invalid options")
         return None
