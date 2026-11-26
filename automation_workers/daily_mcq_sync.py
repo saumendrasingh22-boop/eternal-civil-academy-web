@@ -297,12 +297,12 @@ STRICT QUALITY & ACCURACY RULES:
      * 1 Assertion-Reason (कथन और कारण / Statement & Conclusion) question
      * 1-2 Multi-Statement (कथन 1 & 2) questions ONLY — NEVER exceed 30% statement questions!
 3. SINGLE UNAMBIGUOUS ANSWER: Ensure "correct" ("A"|"B"|"C"|"D") matches the exact right option in BOTH English (optionAEn..optionDEn) and Hindi (optionAHi..optionDHi) in identical A,B,C,D order.
-4. STRUCTURED, LINE-BY-LINE EDITORIAL EXPLANATION (in BOTH English & Hindi — NEVER write one long wall-of-text paragraph!):
-   - Put EACH distinct point on its OWN NEW LINE using "\n" so it reads like a manually typeset coaching booklet:
-     Line 1: **Basic Concept / मूल अवधारणा:** Explain the core concept clearly from scratch.
-     Line 2-4: Explain each statement or key fact on a SEPARATE line (e.g., "• **Statement 1 (Correct/Incorrect):** ..." then "\n• **Statement 2 (Correct/Incorrect):** ...", or for direct MCQs "• **Key Fact:** ..." then "\n• **Why other options are wrong:** ...").
-     Final Line: **Prelims Takeaway / प्रीलिम्स विशेष:** 1 crisp high-yield exam fact.
-   - Wrap ONLY genuinely important Prelims facts (exact **Years, Dates, Constitutional Articles, Acts, Important Names, Key Scientific/Geographic Terms**) in **double asterisks** so they render BOLD. Do NOT bold ordinary words or every sentence.
+4. STRUCTURED, LINE-BY-LINE EDITORIAL EXPLANATION (in BOTH English & Hindi — NEVER write one long wall-of-text paragraph, and NEVER write mechanical heading labels!):
+   - Put EACH distinct point on its OWN NEW LINE using "\n":
+     Line 1: Directly explain the basic concept of the topic from scratch (DO NOT write "Basic Concept:" or "मूल अवधारणा:").
+     Line 2-4: Directly explain why the right option/statement is correct and why the other options/statements are wrong, each on a separate line (DO NOT write "Key Fact:", "Why other options are wrong:", or "अन्य विकल्प क्यों गलत हैं:").
+     Final Line: Directly state 1 high-yield Prelims revision fact (DO NOT write "Prelims Takeaway:" or "प्रीलिम्स विशेष:").
+   - Wrap ONLY genuinely important Prelims facts (exact **Years, Dates, Constitutional Articles, Acts, Important Names, Key Terms**) in **double asterisks** so they render BOLD. Do NOT bold ordinary words.
 5. PURE ENGLISH + PURE DEVANAGARI HINDI (हिन्दी): ZERO Urdu/Arabic/Persian script anywhere.
 
 AVOID REPEATING THESE RECENT QUESTIONS:
@@ -419,17 +419,27 @@ def generate_verified_batch(date_str: str, spec: str, target_count: int, avoid_t
     return verified[:target_count]
 
 
+LABEL_STRIP_RE = re.compile(
+    r"^\s*(?:[•\-\*]\s*)?(?:\*\*)?\s*(?:"
+    r"Basic\s*Concept|Core\s*Concept|Key\s*Fact(?:s)?|Why\s+other\s+options\s+are\s+wrong|"
+    r"Other\s+Options|Prelims\s*Takeaway|Prelims\s*Fact(?:s)?|Explanation|Detailed\s*Explanation|"
+    r"मूल\s*अवधारणा|मुख्य\s*तथ्य|सही\s*तथ्य|अन्य\s*विकल्प(?:\s*क्यों\s*गलत\s*हैं)?|"
+    r"प्रीलिम्स\s*विशेष(?:\s*तथ्य)?|प्रीलिम्स\s*तथ्य|विस्तृत\s*व्याख्या|व्याख्या"
+    r")\s*(?:\*\*)?\s*[:\-–—]\s*(?:\*\*)?\s*",
+    re.I,
+)
+
+
 def _fmt_rich_html(text: str) -> str:
-    """Escapes HTML, converts **bold** facts into Navy bold spans, and renders each line cleanly."""
+    """Strips mechanical labels, escapes HTML, bolds **facts**, and renders each point on a clean new line."""
     lines = [ln.strip() for ln in (text or "").replace("\r\n", "\n").split("\n") if ln.strip()]
     out = []
     for ln in lines:
-        esc = html.escape(ln)
+        cleaned = LABEL_STRIP_RE.sub("", ln).strip()
+        if not cleaned:
+            continue
+        esc = html.escape(cleaned)
         esc = re.sub(r"\*\*([^*]+)\*\*", r'<strong class="fact">\1</strong>', esc)
-        # Auto-bold clean leading labels like "Statement 1:" or "मूल अवधारणा:" if not already bold
-        if "<strong" not in esc[:35] and ":" in esc[:45]:
-            head, rest = esc.split(":", 1)
-            esc = f'<strong class="fact">{head}:</strong>{rest}'
         out.append(f'<div class="exp-line">{esc}</div>')
     return "".join(out)
 
@@ -438,9 +448,8 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
     from weasyprint import HTML
 
     is_hi = lang == "hi"
-    tag_lbl = "दैनिक NCERT क्विज़ (20 MCQs)" if is_hi else "Daily NCERT Quiz (20 MCQs)"
-    title = f"दैनिक NCERT क्विज़ (20 MCQs) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 MCQs) — {date_str}"
-    sub = "20 प्रश्न • +1 सही / -1/3 नेगेटिव मार्किंग • विस्तृत व्याख्या सहित" if is_hi else "20 Questions • +1 Correct / -1/3 Negative Marking • Detailed Explanations"
+    tag_lbl = "दैनिक NCERT क्विज़" if is_hi else "Daily NCERT Quiz"
+    title = f"दैनिक NCERT क्विज़ (20 प्रश्न) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 Questions) — {date_str}"
 
     logo_src = "https://www.eternalcivilacademy.com/logo.jpg"
     for cand in ("public/logo.jpg", "public/logo.png", "public/icon-192.png"):
@@ -453,9 +462,9 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
             print(f"[PDF BRAND] Embedded {cand} ({len(raw_logo)} bytes)")
             break
 
-    web_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B1B3D" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
-    tg_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="#229ED9" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>'
-    ig_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
+    tg_svg_hdr = '<svg width="11" height="11" viewBox="0 0 24 24" fill="#38bdf8" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>'
+    tg_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="#229ED9" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>'
+    ig_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2.2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
 
     q_blocks = []
     for q in questions:
@@ -463,36 +472,27 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
         opts = q["optionsHi"] if is_hi else q["optionsEn"]
         exp = _fmt_rich_html(q["explanationHi"] if is_hi else q["explanationEn"])
         ans_lbl = "सही उत्तर" if is_hi else "Correct Answer"
-        exp_lbl = "विस्तृत व्याख्या" if is_hi else "Detailed Explanation"
         opt_html = "".join(f'<div class="qopt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
         q_blocks.append(
             f'<div class="qcard">'
             f'<div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div>'
             f'<div class="qtxt">{qtxt}</div>'
             f'<div class="qopts">{opt_html}</div>'
-            f'<div class="qans"><span class="ans-tag">{ans_lbl}: ({q["correct"]})</span><div class="exp-hdr">{exp_lbl}</div><div class="exp-body">{exp}</div></div>'
+            f'<div class="qans"><span class="ans-tag">{ans_lbl}: ({q["correct"]})</span><div class="exp-body">{exp}</div></div>'
             f'</div>'
         )
 
     css = """
 @page {
   size: A4;
-  margin: 26mm 14mm 18mm 14mm;
+  margin: 27mm 14mm 23mm 14mm;
   @top-center {
     content: element(ecaRunningHeader);
     width: 100%;
   }
-  @bottom-left {
-    content: "ETERNAL CIVIL ACADEMY • www.eternalcivilacademy.com";
-    font-size: 7.8pt;
-    font-weight: 700;
-    color: #0B1B3D;
-  }
-  @bottom-right {
-    content: "Page " counter(page) " of " counter(pages);
-    font-size: 7.8pt;
-    font-weight: 700;
-    color: #E60000;
+  @bottom-center {
+    content: element(ecaRunningFooter);
+    width: 100%;
   }
 }
 * { box-sizing: border-box; }
@@ -509,14 +509,14 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-32deg);
-  font-size: 32pt;
-  font-weight: 800;
+  font-size: 35pt;
+  font-weight: 900;
   color: #0B1B3D;
-  opacity: 0.08;
+  opacity: 0.10;
   white-space: nowrap;
   z-index: 9999;
   pointer-events: none;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.6px;
 }
 .running-hdr {
   position: running(ecaRunningHeader);
@@ -531,9 +531,9 @@ body {
   align-items: center;
 }
 .hl { display: flex; align-items: center; gap: 9px; }
-.lg { height: 34px; width: auto; max-width: 115px; object-fit: contain; border-radius: 4px; background: #ffffff; padding: 2px; }
-.br { font-size: 12pt; font-weight: 800; color: #ffffff; letter-spacing: 0.4px; line-height: 1.15; }
-.tg { font-size: 7.5pt; color: #fca5a5; font-weight: 700; margin-top: 1px; }
+.lg { height: 35px; width: auto; max-width: 115px; object-fit: contain; border-radius: 4px; background: #ffffff; padding: 2px; }
+.br { font-size: 13.5pt; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; line-height: 1.12; }
+.tg { font-size: 8.5pt; color: #fecaca; font-weight: 800; margin-top: 2px; letter-spacing: 0.2px; }
 .hr { text-align: right; }
 .hr-tag {
   display: inline-block;
@@ -544,8 +544,30 @@ body {
   padding: 2px 8px;
   border-radius: 99px;
 }
-.hr-web { display: block; font-size: 7.5pt; font-weight: 700; color: #e2e8f0; text-decoration: none; margin-top: 2px; }
-.title-box, .qcard, .ft { position: relative; z-index: 1; }
+.hr-tg {
+  display: block;
+  font-size: 7.8pt;
+  font-weight: 800;
+  color: #e0f2fe;
+  text-decoration: none;
+  margin-top: 3px;
+}
+.running-ftr {
+  position: running(ecaRunningFooter);
+  width: 100%;
+  border-top: 2px solid #0B1B3D;
+  padding-top: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8pt;
+}
+.ft-left { text-align: left; line-height: 1.35; }
+.ft-brand { font-size: 8.6pt; font-weight: 900; color: #0B1B3D; display: block; }
+.ft-web { font-size: 7.8pt; font-weight: 700; color: #E60000; text-decoration: none; display: block; }
+.ft-right { text-align: right; line-height: 1.4; }
+.ft-social { display: block; font-size: 7.8pt; font-weight: 800; color: #0B1B3D; text-decoration: none; }
+.title-box, .qcard { position: relative; z-index: 1; }
 .title-box {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
@@ -554,9 +576,7 @@ body {
   padding: 8px 12px;
   margin: 0 0 11px 0;
 }
-.title-box h1 { font-size: 13pt; color: #0B1B3D; margin: 0 0 2px 0; line-height: 1.3; }
-.title-box p { font-size: 8.5pt; color: #475569; margin: 0; font-weight: 600; }
-/* Natural page flow: NO forced half-empty pages! */
+.title-box h1 { font-size: 13pt; font-weight: 900; color: #0B1B3D; margin: 0; line-height: 1.3; }
 .qcard {
   border: 1px solid #cbd5e1;
   border-top: 2.5px solid #0B1B3D;
@@ -596,7 +616,7 @@ body {
   padding: 6px 9px;
   font-size: 8.8pt;
   color: #1e293b;
-  line-height: 1.46;
+  line-height: 1.48;
 }
 .ans-tag {
   display: inline-block;
@@ -606,32 +626,20 @@ body {
   font-weight: 800;
   padding: 1.5px 7px;
   border-radius: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
-.exp-hdr { font-size: 8.5pt; font-weight: 800; color: #0B1B3D; margin: 2px 0 4px 0; text-transform: uppercase; letter-spacing: 0.3px; }
 .exp-body { margin-top: 2px; }
-.exp-line { margin-bottom: 4.5px; line-height: 1.5; }
+.exp-line { margin-bottom: 4.5px; line-height: 1.52; }
 .exp-line:last-child { margin-bottom: 0; }
-.fact { font-weight: 800; color: #0B1B3D; }
-.ft {
-  margin-top: 14px;
-  padding-top: 9px;
-  border-top: 2.5px solid #0B1B3D;
-  font-size: 8.5pt;
-  color: #0B1B3D;
-  page-break-inside: avoid;
-}
-.ft-links { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; }
-.ft a { color: #0B1B3D; font-weight: 700; text-decoration: none; }
-.ft-copy { font-size: 7.8pt; color: #475569; text-align: center; font-weight: 600; }
+.fact { font-weight: 900; color: #0B1B3D; }
 """
 
     doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>{css}</style></head><body>
 <div class="wm">www.eternalcivilacademy.com</div>
-<div class="running-hdr"><div class="hl"><img src="{logo_src}" class="lg"/><div><div class="br">ETERNAL CIVIL ACADEMY</div><div class="tg">Your Success, Our Commitment</div></div></div><div class="hr"><span class="hr-tag">{html.escape(tag_lbl)}</span><a href="https://www.eternalcivilacademy.com" class="hr-web">www.eternalcivilacademy.com</a></div></div>
-<div class="title-box"><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
+<div class="running-hdr"><div class="hl"><img src="{logo_src}" class="lg"/><div><div class="br">ETERNAL CIVIL ACADEMY</div><div class="tg">Your Success, Our Commitment</div></div></div><div class="hr"><span class="hr-tag">{html.escape(tag_lbl)}</span><a href="https://t.me/EternalCivilAcademy" class="hr-tg">{tg_svg_hdr}t.me/EternalCivilAcademy</a></div></div>
+<div class="running-ftr"><div class="ft-left"><span class="ft-brand">ETERNAL CIVIL ACADEMY</span><a href="https://www.eternalcivilacademy.com" class="ft-web">www.eternalcivilacademy.com</a></div><div class="ft-right"><a href="https://t.me/EternalCivilAcademy" class="ft-social">{tg_svg}t.me/EternalCivilAcademy</a><a href="https://instagram.com/eternalcivilacademy" class="ft-social">{ig_svg}@eternalcivilacademy</a></div></div>
+<div class="title-box"><h1>{html.escape(title)}</h1></div>
 {''.join(q_blocks)}
-<div class="ft"><div class="ft-links"><span>{web_svg}<a href="https://www.eternalcivilacademy.com">www.eternalcivilacademy.com</a></span><span>{tg_svg}<a href="https://t.me/EternalCivilAcademy">t.me/EternalCivilAcademy</a></span><span>{ig_svg}<a href="https://instagram.com/eternalcivilacademy">@eternalcivilacademy</a></span></div><div class="ft-copy">&copy; 2026 ETERNAL CIVIL ACADEMY &bull; Dedicated to UPSC &amp; State PCS Examinations</div></div>
 </body></html>"""
     HTML(string=doc_html).write_pdf(out_path)
     print(f"[PDF OK] {out_path} ({os.path.getsize(out_path)} bytes)")
