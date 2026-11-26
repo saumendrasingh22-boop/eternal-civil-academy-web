@@ -674,7 +674,8 @@ def upload_to_release(file_path: str, content_type: str) -> str:
 
 
 def main():
-    today_ist = datetime.now(IST).strftime("%Y-%m-%d")
+    custom_dt = (os.getenv("TARGET_DATE") or "").strip()
+    today_ist = custom_dt if re.fullmatch(r"\d{4}-\d{2}-\d{2}", custom_dt) else datetime.now(IST).strftime("%Y-%m-%d")
     is_manual = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
     print(f"[ECA Daily NCERT Quiz v2] Starting for {today_ist} (manual={is_manual})")
 
@@ -771,7 +772,7 @@ def main():
         "englishPdfUrl": en_pdf_url,
         "hindiPdfUrl": hi_pdf_url,
     }
-    updated_tests = [new_entry] + [t for t in existing_tests if isinstance(t, dict) and t.get("date") != today_ist]
+    updated_tests = sorted([new_entry] + [t for t in existing_tests if isinstance(t, dict) and t.get("date") != today_ist], key=lambda x: x.get("date", ""), reverse=True)
     if not cms_post("daily_practice_tests", updated_tests):
         raise RuntimeError("Failed to update daily_practice_tests in CMS")
 

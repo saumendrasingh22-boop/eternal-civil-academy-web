@@ -2,6 +2,11 @@ name: Daily NCERT Quiz (20 MCQs) Sync
 
 on:
   workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Optional back-date YYYY-MM-DD (leave blank for Today IST)'
+        required: false
+        default: ''
   schedule:
     - cron: '30 1 * * *'
     - cron: '0 2 * * *'
@@ -37,5 +42,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BOT_API_SECRET: ${{ secrets.BOT_API_SECRET }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_DATE: ${{ github.event.inputs.target_date }}
           WEBSITE_URL: https://www.eternalcivilacademy.com
         run: python3 automation_workers/daily_mcq_sync.py
