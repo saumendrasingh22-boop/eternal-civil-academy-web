@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       .select("status")
       .eq("item_id", itemId)
       .eq("utr_number", utr)
-      .eq("status", "Approved")
+      
       .limit(1)
       .maybeSingle();
 

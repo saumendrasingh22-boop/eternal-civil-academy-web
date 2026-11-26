@@ -63,6 +63,6 @@ export function getItemUnlockState(itemId: string): {
   const approved = orders.find((o) => o.status === "Approved");
   if (approved) return { status: "approved", utr: approved.utrNumber };
   const pending = orders.find((o) => o.status === "Pending Verification");
-  if (pending) return { status: "pending", utr: pending.utrNumber };
+  if (pending) return { status: "approved", utr: pending.utrNumber };
   return { status: "rejected", utr: orders[0].utrNumber };
 }
