@@ -147,9 +147,40 @@ def detect_gs(title: str, desc: str, fallback: str) -> str:
     return fallback
 
 
+
+_DEDUP_STOP = {"the","and","for","with","from","into","that","this","india","indias","scheme","yojana","news","update","state","pradesh","madhya","uttar","bihar","rajasthan","haryana","jharkhand","uttarakhand","first","new","govt","government","union","national","central","2024","2025","2026","2027"}
+
+def _dedup_kw(text: str):
+    toks = [t for t in re.split(r"[^a-z0-9]+", (text or "").lower()) if len(t) >= 3 and t not in _DEDUP_STOP]
+    if toks and re.fullmatch(r"[0-9a-f]{6}", toks[-1]):
+        toks = toks[:-1]
+    return set(toks)
+
+class _SmartSlugSet(set):
+    def __init__(self, items=()):
+        super().__init__(items)
+        self._kw_list = [_dedup_kw(x) for x in items if _dedup_kw(x)]
+    def add(self, item):
+        super().add(item)
+        k = _dedup_kw(str(item))
+        if k:
+            self._kw_list.append(k)
+    def __contains__(self, item):
+        if super().__contains__(item):
+            return True
+        k = _dedup_kw(str(item))
+        if len(k) < 2:
+            return False
+        for ex in self._kw_list:
+            inter = len(k & ex)
+            denom = min(len(k), len(ex))
+            if denom >= 2 and (inter / denom >= 0.6 or inter >= 3):
+                return True
+        return False
+
 def fetch_existing_slugs() -> set:
     if not SUPABASE_URL or not SUPABASE_KEY:
-        return set()
+        return _SmartSlugSet()
     try:
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/current_affairs?select=slug&order=created_at.desc&limit=400",
@@ -157,7 +188,7 @@ def fetch_existing_slugs() -> set:
             timeout=15,
         )
         if r.ok:
-            return {row.get("slug", "") for row in r.json() if row.get("slug")}
+            return _SmartSlugSet(row.get("slug", "") for row in r.json() if row.get("slug"))
     except Exception as e:
         print(f"[warn] fetch_existing_slugs: {e}")
     return set()

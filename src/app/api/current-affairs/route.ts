@@ -63,8 +63,30 @@ export async function GET(req: NextRequest) {
     return true;
   });
 
+  const _STOP_WORDS = new Set(["the","and","for","with","from","into","that","this","india","indias","scheme","yojana","news","update","state","pradesh","madhya","uttar","bihar","rajasthan","haryana","jharkhand","uttarakhand","first","new","govt","government","union","national","central","2024","2025","2026","2027"]);
+  const _kwSet = (t: string) => new Set(String(t || "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !_STOP_WORDS.has(w)));
+  const dedupeByTopic = (list: typeof liveArticles) => {
+    const out: typeof liveArticles = [];
+    const seenKws: Set<string>[] = [];
+    for (const art of list) {
+      const k = _kwSet(art.title || art.slug);
+      let isDup = false;
+      if (k.size >= 2) {
+        for (const ex of seenKws) {
+          let inter = 0;
+          k.forEach((w) => { if (ex.has(w)) inter++; });
+          const denom = Math.min(k.size, ex.size);
+          if (denom >= 2 && (inter / denom >= 0.6 || inter >= 3)) { isDup = true; break; }
+        }
+      }
+      if (!isDup) { out.push(art); if (k.size >= 2) seenKws.push(k); }
+    }
+    return out;
+  };
+  const dedupedLive = dedupeByTopic(liveArticles);
+
   return NextResponse.json({
-    source: liveArticles.length > 0 ? "supabase_live_plus_curated" : "curated_default",
-    articles: liveArticles.length > 0 ? liveArticles : fallbackFiltered,
+    source: dedupedLive.length > 0 ? "supabase_live_plus_curated" : "curated_default",
+    articles: dedupedLive.length > 0 ? dedupedLive : fallbackFiltered,
   });
 }

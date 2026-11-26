@@ -17,7 +17,7 @@ export default function CurrentAffairsPage() {
 
   useEffect(() => {
     try { const sl = new URLSearchParams(window.location.search).get("lang") || window.localStorage.getItem("eca_ca_lang"); if (sl === "hi" || sl === "en") setLang(sl); } catch {}
-    fetch("/api/current-affairs?_t=" + Date.now(), { cache: "no-store" })
+    fetch("/api/current-affairs?section=daily_ca&_t=" + Date.now(), { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d?.articles) && d.articles.length > 0) {
@@ -28,7 +28,7 @@ export default function CurrentAffairsPage() {
   }, []);
 
   const articles = allArticles.filter((item) =>
-    gsFilter === "ALL" ? true : item.examRelevance === gsFilter
+    (item.sectionType === "daily_ca" || !item.sectionType) && (gsFilter === "ALL" ? true : item.examRelevance === gsFilter)
   );
 
   return (
