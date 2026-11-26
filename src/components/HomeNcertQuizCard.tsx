@@ -48,6 +48,24 @@ function fmtDate(iso: string): string {
   }
 }
 
+function renderRichLines(text: string) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line, li) => (
+      <div key={li} className="mb-1 last:mb-0">
+        {line.split(/(\*\*[^*]+\*\*)/g).map((part, pi) =>
+          part.startsWith("**") && part.endsWith("**") ? (
+            <strong key={pi} className="font-extrabold text-[#0B1B3D]">{part.slice(2, -2)}</strong>
+          ) : (
+            <span key={pi}>{part}</span>
+          )
+        )}
+      </div>
+    ));
+}
+
 export default function HomeNcertQuizCard() {
   const [tests, setTests] = useState<DailyTestMeta[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -392,9 +410,9 @@ export default function HomeNcertQuizCard() {
                       <p className="text-green-800 font-bold">
                         {lang === "hi" ? "सही उत्तर:" : "Answer:"} ({q.correct}) {opts?.[q.correct]}
                       </p>
-                      <p className="bg-amber-50 border border-amber-200 rounded p-1.5 text-slate-700 leading-snug">
-                        {lang === "hi" ? q.explanationHi : q.explanationEn}
-                      </p>
+                      <div className="bg-amber-50 border border-amber-200 rounded p-2 text-slate-700 leading-relaxed">
+                        {renderRichLines(lang === "hi" ? q.explanationHi : q.explanationEn)}
+                      </div>
                     </div>
                   );
                 })
