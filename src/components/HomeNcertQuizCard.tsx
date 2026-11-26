@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, CheckCircle2, Download, RotateCcw, Trophy, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, Download, Maximize2, Minimize2, RotateCcw, Trophy, XCircle } from "lucide-react";
 
 interface DailyTestMeta {
   id: string;
@@ -56,6 +56,8 @@ export default function HomeNcertQuizCard() {
   const [loadingQ, setLoadingQ] = useState(false);
 
   const [lang, setLang] = useState<"en" | "hi">("en");
+  const [isExpanded, setIsExpanded] = useState(false);
+  useEffect(() => { if (!isExpanded) return; const prev = document.body.style.overflow; document.body.style.overflow = "hidden"; const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setIsExpanded(false); }; window.addEventListener("keydown", onKey); return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", onKey); }; }, [isExpanded]);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
   const [submitted, setSubmitted] = useState(false);
@@ -193,14 +195,14 @@ export default function HomeNcertQuizCard() {
   );
 
   return (
-    <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-      <div>
+    <div className={isExpanded ? "fixed inset-0 z-[100] bg-white flex flex-col justify-between overflow-hidden" : "lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between"}>
+      <div className={isExpanded ? "flex-1 flex flex-col overflow-hidden" : ""}>
         <div className="bg-[#0B1B3D] text-white px-4 py-3 flex items-center justify-between gap-2">
           <div>
             <h2 className="font-extrabold text-sm uppercase tracking-wider">Daily NCERT Quiz</h2>
             <p className="text-[10px] text-slate-300">20 MCQs &bull; +1 / -1/3 Negative</p>
           </div>
-          <div className="flex items-center gap-1 bg-white/10 p-0.5 rounded-lg">
+          <div className="flex items-center gap-1.5"><div className="flex items-center gap-1 bg-white/10 p-0.5 rounded-lg">
             <button
               type="button"
               onClick={() => setLang("en")}
@@ -219,7 +221,7 @@ export default function HomeNcertQuizCard() {
             >
               हिन्दी
             </button>
-          </div>
+          </div><button type="button" onClick={() => setIsExpanded((v) => !v)} title={isExpanded ? "Exit Fullscreen" : "Expand Fullscreen"} aria-label={isExpanded ? "Exit Fullscreen" : "Expand Fullscreen"} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition">{isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}</button></div>
         </div>
 
         {tests.length > 0 && (
@@ -253,7 +255,7 @@ export default function HomeNcertQuizCard() {
             </p>
           </div>
         ) : !submitted ? (
-          <div className="p-4 space-y-3">
+          <div className={isExpanded ? "p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 max-w-3xl mx-auto w-full" : "p-4 space-y-3"}>
             <div className="grid grid-cols-10 gap-1">
               {questions.map((q, i) => {
                 const ans = Boolean(answers[q.id]);
@@ -320,7 +322,7 @@ export default function HomeNcertQuizCard() {
             )}
           </div>
         ) : (
-          <div className="p-4 space-y-3">
+          <div className={isExpanded ? "p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 max-w-3xl mx-auto w-full" : "p-4 space-y-3"}>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-blue-50 rounded-xl p-2 border border-blue-100">
                 <p className="text-[10px] font-bold text-slate-600">Net (-1/3)</p>
@@ -364,7 +366,7 @@ export default function HomeNcertQuizCard() {
               </button>
             </div>
 
-            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+            <div className={`space-y-2.5 ${isExpanded ? "max-h-none" : "max-h-[300px] overflow-y-auto"} pr-1`}>
               {reviewQs.length === 0 ? (
                 <p className="text-xs text-slate-500 text-center py-4 flex items-center justify-center gap-1">
                   <Trophy className="w-4 h-4 text-green-600" /> Zero mistakes!
