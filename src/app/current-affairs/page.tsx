@@ -13,13 +13,11 @@ export default function CurrentAffairsPage() {
   const [gsFilter, setGsFilter] = useState("ALL");
   const [customCaPdfs, setCustomCaPdfs] = useState<Array<{ id: string; section: string; title: string; priceInr: number; englishPdfUrl: string; hindiPdfUrl: string; createdAt: string }>>([]);
   useEffect(() => { const loadCustomPdfs = () => { try { const raw = window.localStorage.getItem("eca_custom_content_v1"); const parsed = raw ? JSON.parse(raw) : []; if (Array.isArray(parsed)) setCustomCaPdfs(parsed.filter((x: any) => (x.section || "").toLowerCase().includes("current affairs"))); } catch {} }; loadCustomPdfs(); window.addEventListener("eca-custom-content-updated", loadCustomPdfs); return () => window.removeEventListener("eca-custom-content-updated", loadCustomPdfs); }, []);
-  const [allArticles, setAllArticles] = useState<BilingualCurrentAffairItem[]>(
-    STRUCTURED_CURRENT_AFFAIRS
-  );
+  const [allArticles, setAllArticles] = useState<BilingualCurrentAffairItem[]>([]);
 
   useEffect(() => {
     try { const sl = new URLSearchParams(window.location.search).get("lang") || window.localStorage.getItem("eca_ca_lang"); if (sl === "hi" || sl === "en") setLang(sl); } catch {}
-    fetch("/api/current-affairs")
+    fetch("/api/current-affairs?_t=" + Date.now(), { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d?.articles) && d.articles.length > 0) {
@@ -69,7 +67,7 @@ export default function CurrentAffairsPage() {
             className="inline-flex items-center gap-1.5 bg-[#0B1B3D] hover:bg-[#E60000] text-white text-xs font-extrabold px-3.5 py-2 rounded-xl transition"
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Daily PDF Archive</span>
+            <span>Daily CA Pdfs</span>
           </Link>
           <Link
             href="/material?tab=essay-material"

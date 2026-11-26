@@ -36,6 +36,15 @@ import DualPdfButton from "@/components/DualPdfButton";
 import ExamCountdownBar from "@/components/ExamCountdownBar";
 
 export default function HomePage() {
+  const [liveCa, setLiveCa] = useState<any[]>([]);
+  useEffect(() => {
+    fetch("/api/current-affairs?_t=" + Date.now(), { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.articles) && d.articles.length > 0) setLiveCa(d.articles);
+      })
+      .catch(() => {});
+  }, []);
   const [premiumBooks, setPremiumBooks] = useState(PREMIUM_BOOK_COVERS);
   useEffect(() => {
     const normalize = (arr: any[]) => arr.map((b: any) => ({ ...b, priceInr: Number(b?.priceInr || 0), isPaid: Number(b?.priceInr || 0) > 0 }));
@@ -341,7 +350,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="divide-y divide-slate-100">
-                  {STRUCTURED_CURRENT_AFFAIRS.slice(0, 3).map((ca) => (
+                  {liveCa.length === 0 ? (<div className="p-5 text-xs text-slate-500">Loading latest Daily Current Affairs...</div>) : liveCa.slice(0, 3).map((ca) => (
                     <div key={ca.id} className="p-4 hover:bg-slate-50 transition">
                       <div className="flex items-center gap-2 text-[11px] mb-1">
                         <span className="bg-red-50 text-[#E60000] font-bold px-2 py-0.5 rounded">
