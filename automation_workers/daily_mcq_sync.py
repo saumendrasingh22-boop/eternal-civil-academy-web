@@ -430,6 +430,14 @@ LABEL_STRIP_RE = re.compile(
 )
 
 
+def _fmt_inline_bold(text: str) -> str:
+    """Converts **keyword** into crisp bold spans and strips any leftover stray **."""
+    esc = html.escape(text or "")
+    esc = re.sub(r"\*\*([^*]+)\*\*", r'<strong class="fact">\1</strong>', esc)
+    esc = esc.replace("**", "")
+    return esc
+
+
 def _fmt_rich_html(text: str) -> str:
     """Strips mechanical labels, escapes HTML, bolds **facts**, and renders each point on a clean new line."""
     lines = [ln.strip() for ln in (text or "").replace("\r\n", "\n").split("\n") if ln.strip()]
@@ -438,8 +446,7 @@ def _fmt_rich_html(text: str) -> str:
         cleaned = LABEL_STRIP_RE.sub("", ln).strip()
         if not cleaned:
             continue
-        esc = html.escape(cleaned)
-        esc = re.sub(r"\*\*([^*]+)\*\*", r'<strong class="fact">\1</strong>', esc)
+        esc = _fmt_inline_bold(cleaned)
         out.append(f'<div class="exp-line">{esc}</div>')
     return "".join(out)
 
@@ -468,11 +475,11 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
 
     q_blocks = []
     for q in questions:
-        qtxt = html.escape(q["questionHi"] if is_hi else q["questionEn"]).replace("\n", "<br/>")
+        qtxt = _fmt_inline_bold(q["questionHi"] if is_hi else q["questionEn"]).replace("\n", "<br/>")
         opts = q["optionsHi"] if is_hi else q["optionsEn"]
         exp = _fmt_rich_html(q["explanationHi"] if is_hi else q["explanationEn"])
         ans_lbl = "सही उत्तर" if is_hi else "Correct Answer"
-        opt_html = "".join(f'<div class="qopt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
+        opt_html = "".join(f'<div class="qopt"><b>({k})</b> {_fmt_inline_bold(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
         q_blocks.append(
             f'<div class="qcard">'
             f'<div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div>'
