@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 import FlagshipSchemesGrid from "@/components/FlagshipSchemesGrid";
+import StateSchemesGrid from "@/components/StateSchemesGrid";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -57,7 +58,7 @@ export default function SchemesPage() {
                 lang === "hi" ? "bg-[#E60000] text-white" : "text-slate-700"
               }`}
             >
-              हिन्दी
+              à¤¹à¤¿à¤¨à¥à¤¦à¥€
             </button>
           </div>
 
@@ -111,7 +112,7 @@ export default function SchemesPage() {
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="bg-red-50 text-[#E60000] text-xs font-extrabold px-2.5 py-0.5 rounded">
-                    {sc.stateName || "Central"} • {sc.examRelevance}
+                    {sc.stateName || "Central"} â€¢ {sc.examRelevance}
                   </span>
                   <DualPdfButton article={sc} title={loc.title.replace(/\*\*/g, "")} compact />
                 </div>
@@ -128,7 +129,7 @@ export default function SchemesPage() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex items-center justify-between">
             <div>
               <span className="text-xs font-extrabold text-[#E60000]">
-                {selectedState} • {lang === "hi" ? "हिन्दी" : "English"}
+                {selectedState} â€¢ {lang === "hi" ? "à¤¹à¤¿à¤¨à¥à¤¦à¥€" : "English"}
               </span>
               <h2 className="text-base font-extrabold text-[#0B1B3D]">
                 {selectedState} Government Schemes Compilation
@@ -139,6 +140,7 @@ export default function SchemesPage() {
         )}
       </div>
           {scope === "central" && <FlagshipSchemesGrid lang={lang} />}
+      {scope === "state" && <StateSchemesGrid lang={lang} selectedState={selectedState} />}
       <LiveAdminSectionFeed sectionMatch="Schemes" />
     </div>
   );
