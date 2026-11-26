@@ -1,6 +1,7 @@
 "use client";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 import DailyNcertSeriesFeed from "@/components/DailyNcertSeriesFeed";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -140,6 +141,7 @@ export default function TestSeriesPage() {
       </div>
 
       {activeTab === "free" && <DailyNcertSeriesFeed />}
+      <SmartQuizzesFeed targetSection="test_series" lang={lang} pricingFilter={activeTab === "paid" ? "paid" : "free"} />
         {activeTab === "free" ? (
         <div className="space-y-6">
           <div className="bg-[#0B1B3D] text-white rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">

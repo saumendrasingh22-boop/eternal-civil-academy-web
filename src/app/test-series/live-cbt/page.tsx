@@ -38,6 +38,21 @@ export default function LiveCbtSimulatorPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+        const smartSlug = params.get("smartQuiz");
+    if (smartSlug) {
+      fetch("/api/smart-quizzes?slug=" + encodeURIComponent(smartSlug), { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => {
+          const sq = d?.quiz;
+          if (sq && Array.isArray(sq.questions) && sq.questions.length > 0) {
+            setTestTitle(initLang === "hi" ? (sq.titleHi || sq.titleEn) : (sq.titleEn || sq.titleHi));
+            setQuestions(sq.questions);
+            setTimeLeft(Math.max(120, Number(sq.durationMinutes || 60) * 60));
+          }
+        })
+        .catch(() => {});
+      return;
+    }
     const quizId = params.get("quiz");
     const initLang = params.get("lang");
     if (initLang === "hi" || initLang === "en") setLang(initLang);

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { COMMISSIONS_LIST } from "@/lib/siteData";
 import { loadNoCodeCms } from "@/lib/noCodeCmsStore";
 import DualPdfButton from "@/components/DualPdfButton";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 import { Languages } from "lucide-react";
 
 export default function PyqPage() {
@@ -86,6 +87,8 @@ export default function PyqPage() {
           </button>
         ))}
       </div>
+      <SmartQuizzesFeed targetSection="pyq" lang={lang} commissionFilter={selectedComm} />
+
 
       <div className="space-y-4">
         {papers.map((p, i) => {

@@ -1,3 +1,4 @@
+import AdminSmartQuizStudio from "@/components/AdminSmartQuizStudio";
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -2022,6 +2023,7 @@ export default function AdminDashboardPage() {
         canManageContent={canManageContent}
       />
     </div>
+      <AdminSmartQuizStudio />
     </AdminAuthGate>
   );
 }
