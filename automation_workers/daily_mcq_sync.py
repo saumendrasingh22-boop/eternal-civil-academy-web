@@ -801,7 +801,13 @@ def main():
     custom_dt = (os.getenv("TARGET_DATE") or "").strip()
     today_ist = custom_dt if re.fullmatch(r"\d{4}-\d{2}-\d{2}", custom_dt) else datetime.now(IST).strftime("%Y-%m-%d")
     is_manual = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
-    print(f"[ECA Daily NCERT Quiz v2] Starting for {today_ist} (manual={is_manual})")
+    quiz_mode = (os.getenv("QUIZ_MODE") or "all").strip().lower()
+    rebuild_only = os.getenv("REBUILD_EXISTING_PDFS", "").lower() == "true"
+    print(f"[ECA Daily Quiz] mode={quiz_mode} date={today_ist} manual={is_manual} rebuild={rebuild_only}")
+
+    if quiz_mode == "ca":
+        sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=rebuild_only)
+        return
 
     existing_tests = cms_get("daily_practice_tests") or []
     if not isinstance(existing_tests, list):
@@ -825,13 +831,13 @@ def main():
             entry["hindiPdfUrl"] = upload_to_release(hi_p, "application/pdf")
             print(f"[REBUILD OK] {dt}")
         cms_post("daily_practice_tests", existing_tests)
-        sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=True)
+        if quiz_mode == "all": sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=True)
         print("[REBUILD COMPLETE] All existing PDFs updated cleanly!")
         return
 
     if not is_manual and any(t.get("date") == today_ist for t in existing_tests if isinstance(t, dict)):
         print(f"[SKIP] Daily NCERT Quiz for {today_ist} already published.")
-        sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
+        if quiz_mode == "all": sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
         return
 
     # 60-day history (excluding today on manual re-run)
@@ -925,7 +931,7 @@ def main():
         raise RuntimeError("Failed to update daily_practice_tests in CMS")
 
     print(f"[SUCCESS] Published {len(all_qs)}/20 Verified Daily NCERT Quiz + Branded EN/HI PDFs for {today_ist}")
-    sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
+    if quiz_mode == "all": sync_daily_ca_quiz(today_ist, is_manual, rebuild_only=False)
 
 
 if __name__ == "__main__":

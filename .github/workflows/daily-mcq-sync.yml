@@ -8,7 +8,7 @@ on:
         required: false
         default: ''
       rebuild_existing_pdfs:
-        description: 'Re-render ALL existing Quiz PDFs (0 AI calls, fixes old PDFs)'
+        description: 'Re-render ALL existing PDFs (0 AI calls)'
         type: boolean
         required: false
         default: false
@@ -20,7 +20,7 @@ permissions:
   contents: write
 
 jobs:
-  generate-daily-25mcq:
+  generate-daily-ncert-quiz:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -37,8 +37,9 @@ jobs:
           sudo apt-get install -y -qq libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libffi-dev shared-mime-info fonts-noto-core fonts-lohit-deva
           pip install -q requests weasyprint
 
-      - name: Generate 20-MCQ Daily NCERT Quiz and Branded EN/HI PDFs
+      - name: Run Daily NCERT Quiz (20 MCQs) Sync
         env:
+          QUIZ_MODE: ncert
           QUIZ_GEMINI_API_KEY: ${{ secrets.QUIZ_GEMINI_API_KEY }}
           QUIZ_GROQ_API_KEY: ${{ secrets.QUIZ_GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
