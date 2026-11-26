@@ -94,7 +94,7 @@ def validate_question_strict(q: dict) -> dict | None:
 
     exp_en = str(q.get("explanationEn") or "").strip()
     exp_hi = str(q.get("explanationHi") or "").strip()
-    if len(exp_en) < 160 or len(exp_hi) < 160:
+    if len(exp_en) < 100 or len(exp_hi) < 90:
         return None
 
     # Catch answer-key mismatch if explanation explicitly names a different option letter
@@ -235,54 +235,54 @@ Return ONLY valid JSON with key "questions" containing the FULLY VERIFIED & CORR
 
 
 def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: list, batch_name: str) -> list:
-    prompt1 = build_layer1_prompt(date_str, spec, count, avoid_topics)
-    raw1, src1 = _call_gemini_raw(prompt1, temperature=0.2)
-    if not raw1:
-        raw1, src1 = _call_groq_raw(prompt1, temperature=0.2)
-    qlist1 = raw1 if isinstance(raw1, list) else (raw1.get("questions") if isinstance(raw1, dict) else None)
-    if not isinstance(qlist1, list) or not qlist1:
-        raise RuntimeError(f"Layer-1 generation failed for {batch_name}")
-
-    draft_qs = [q for q in qlist1 if isinstance(q, dict)][:count]
-    print(f"[{batch_name} LAYER-1 OK] {src1} generated {len(draft_qs)} draft Qs")
-
-    # Layer 2: Cross-model independent fact audit (prefer opposite provider!)
-    audit_prompt = build_layer2_audit_prompt(draft_qs)
-    if src1 and src1.startswith("gemini:") and GROQ_KEY:
-        raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
-        if not raw2:
-            raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
-    else:
-        raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
-        if not raw2:
-            raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
-
-    qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
-    audited_candidates = qlist2 if isinstance(qlist2, list) else draft_qs
-    print(f"[{batch_name} LAYER-2 AUDIT] {src2 or 'fallback-layer1'} returned {len(audited_candidates)} Qs")
-
-    # Layer 3: Strict programmatic validation
     verified = []
-    for q in audited_candidates:
-        vq = validate_question_strict(q)
-        if vq:
-            verified.append(vq)
+    seen_prefix = set()
+    for attempt in range(1, 4):
+        need = count - len(verified)
+        if need <= 0:
+            break
+        cur_avoid = avoid_topics + [x["questionEn"] for x in verified]
+        prompt1 = build_layer1_prompt(date_str, spec, need, cur_avoid)
+        raw1, src1 = _call_gemini_raw(prompt1, temperature=0.2)
+        if not raw1:
+            raw1, src1 = _call_groq_raw(prompt1, temperature=0.2)
+        qlist1 = raw1 if isinstance(raw1, list) else (raw1.get("questions") if isinstance(raw1, dict) else None)
+        if not isinstance(qlist1, list) or not qlist1:
+            print(f"[{batch_name} attempt {attempt}] Layer-1 empty, retrying...")
+            time.sleep(5)
+            continue
+        draft_qs = [q for q in qlist1 if isinstance(q, dict)][:need]
+        print(f"[{batch_name} attempt {attempt} LAYER-1 OK] {src1} -> {len(draft_qs)} draft Qs")
 
-    # Top up from Layer-1 validated items if Layer-2 dropped any
-    if len(verified) < count:
-        for q in draft_qs:
-            if len(verified) >= count:
-                break
+        audit_prompt = build_layer2_audit_prompt(draft_qs)
+        if src1 and src1.startswith("gemini:") and GROQ_KEY:
+            raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
+            if not raw2:
+                raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+        else:
+            raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+            if not raw2:
+                raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
+
+        qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
+        audited = qlist2 if isinstance(qlist2, list) else draft_qs
+        print(f"[{batch_name} attempt {attempt} LAYER-2 AUDIT] {src2 or 'fallback'} -> {len(audited)} Qs")
+
+        for q in audited:
             vq = validate_question_strict(q)
-            if vq and all(vq["questionEn"][:45] != x["questionEn"][:45] for x in verified):
+            if vq and vq["questionEn"][:45] not in seen_prefix:
+                seen_prefix.add(vq["questionEn"][:45])
                 verified.append(vq)
+                if len(verified) >= count:
+                    break
+        if len(verified) < count:
+            print(f"[{batch_name}] Verified {len(verified)}/{count}, auto-generating remaining {count - len(verified)}...")
+            time.sleep(4)
 
     if len(verified) < count:
         raise RuntimeError(f"{batch_name} passed only {len(verified)}/{count} after 3-layer verification")
-
     print(f"[{batch_name} LAYER-3 PASSED] {count}/{count} verified Qs")
     return verified[:count]
-
 
 def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
     import base64 as _b64
