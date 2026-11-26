@@ -16,7 +16,7 @@ REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-a
 WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com").strip().rstrip("/")
 RELEASE_TAG = "PDFs"
 
-GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
 GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
 FORBIDDEN_SCRIPT_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-NCERT-3Layer-Bot)"}
@@ -125,10 +125,10 @@ def _call_gemini_raw(prompt: str, temperature: float = 0.2):
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"temperature": temperature, "maxOutputTokens": 8192, "responseMimeType": "application/json"},
             }
-            r = requests.post(url, json=body, timeout=65)
+            r = requests.post(url, json=body, timeout=90)
             if r.status_code == 503:
                 time.sleep(4)
-                r = requests.post(url, json=body, timeout=65)
+                r = requests.post(url, json=body, timeout=90)
             if r.ok:
                 txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
                 parsed = _clean_json_text(txt)
@@ -156,7 +156,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                     "response_format": {"type": "json_object"},
                     "messages": [{"role": "user", "content": prompt}],
                 },
-                timeout=65,
+                timeout=90,
             )
             if r.ok:
                 txt = r.json()["choices"][0]["message"]["content"]
@@ -170,7 +170,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
                     json={"model": model, "temperature": temperature, "max_tokens": 5500, "response_format": {"type": "json_object"}, "messages": [{"role": "user", "content": prompt}]},
-                    timeout=65,
+                    timeout=90,
                 )
                 if r2.ok:
                     parsed = _clean_json_text(r2.json()["choices"][0]["message"]["content"])
@@ -239,10 +239,11 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
     raw1, src1 = _call_gemini_raw(prompt1, temperature=0.2)
     if not raw1:
         raw1, src1 = _call_groq_raw(prompt1, temperature=0.2)
-    if not raw1 or not isinstance(raw1.get("questions"), list):
+    qlist1 = raw1 if isinstance(raw1, list) else (raw1.get("questions") if isinstance(raw1, dict) else None)
+    if not isinstance(qlist1, list) or not qlist1:
         raise RuntimeError(f"Layer-1 generation failed for {batch_name}")
 
-    draft_qs = [q for q in raw1["questions"] if isinstance(q, dict)][:count]
+    draft_qs = [q for q in qlist1 if isinstance(q, dict)][:count]
     print(f"[{batch_name} LAYER-1 OK] {src1} generated {len(draft_qs)} draft Qs")
 
     # Layer 2: Cross-model independent fact audit (prefer opposite provider!)
@@ -256,7 +257,8 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
         if not raw2:
             raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
 
-    audited_candidates = raw2.get("questions") if (raw2 and isinstance(raw2.get("questions"), list)) else draft_qs
+    qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
+    audited_candidates = qlist2 if isinstance(qlist2, list) else draft_qs
     print(f"[{batch_name} LAYER-2 AUDIT] {src2 or 'fallback-layer1'} returned {len(audited_candidates)} Qs")
 
     # Layer 3: Strict programmatic validation
