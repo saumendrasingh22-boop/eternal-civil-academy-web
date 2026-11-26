@@ -1,5 +1,6 @@
 "use client";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
+import FlagshipSchemesGrid from "@/components/FlagshipSchemesGrid";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -12,7 +13,7 @@ import { Languages } from "lucide-react";
 
 export default function SchemesPage() {
   const [scope, setScope] = useState<"central" | "state">("central");
-  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [lang, setLang] = useState<"en" | "hi">("hi");
   const [statesList, setStatesList] = useState<string[]>(STATES_LIST);
   const [selectedState, setSelectedState] = useState("Uttar Pradesh");
 
@@ -137,7 +138,8 @@ export default function SchemesPage() {
           </div>
         )}
       </div>
-          <LiveAdminSectionFeed sectionMatch="Schemes" />
+          {scope === "central" && <FlagshipSchemesGrid lang={lang} />}
+      <LiveAdminSectionFeed sectionMatch="Schemes" />
     </div>
   );
 }

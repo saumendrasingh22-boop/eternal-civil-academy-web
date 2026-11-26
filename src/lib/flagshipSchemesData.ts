@@ -1,0 +1,361 @@
+export interface FlagshipScheme {
+  id: string;
+  category: string;
+  launched: string;
+  ministryEn: string;
+  ministryHi: string;
+  titleEn: string;
+  titleHi: string;
+  summaryEn: string;
+  summaryHi: string;
+  keyProvisionsEn: string[];
+  keyProvisionsHi: string[];
+  prelimsFactsEn: string[];
+  prelimsFactsHi: string[];
+  mainsAngleEn: string;
+  mainsAngleHi: string;
+  sourceUrl: string;
+}
+
+export const FLAGSHIP_SCHEMES_10: FlagshipScheme[] = [
+  {
+    id: "pm-surya-ghar",
+    category: "Renewable Energy",
+    launched: "13 Feb 2024",
+    ministryEn: "Ministry of New and Renewable Energy (MNRE)",
+    ministryHi: "नवीन और नवीकरणीय ऊर्जा मंत्रालय (MNRE)",
+    titleEn: "PM Surya Ghar: Muft Bijli Yojana",
+    titleHi: "पीएम सूर्य घर: मुफ्त बिजली योजना",
+    summaryEn: "Central scheme to install rooftop solar panels in 1 crore households across India with a total outlay of ₹75,021 crore, providing free electricity and reducing residential power bills.",
+    summaryHi: "भारत के 1 करोड़ घरों में रूफटॉप सोलर पैनल लगाने की केंद्रीय योजना, जिसका कुल परिव्यय ₹75,021 करोड़ है; इसका उद्देश्य मुफ्त बिजली और स्वच्छ ऊर्जा को बढ़ावा देना है।",
+    keyProvisionsEn: [
+      "Target of 1 crore households with up to 40% subsidy on rooftop solar installation.",
+      "Total approved financial outlay of ₹75,021 crore.",
+      "Expected to save the government approximately ₹75,000 crore annually in electricity costs.",
+    ],
+    keyProvisionsHi: [
+      "1 करोड़ घरों को लक्ष्य करते हुए रूफटॉप सोलर पर 40% तक की सब्सिडी।",
+      "कुल स्वीकृत वित्तीय परिव्यय ₹75,021 करोड़।",
+      "इससे सरकार को सालाना लगभग ₹75,000 करोड़ की बिजली लागत बचत का अनुमान।",
+    ],
+    prelimsFactsEn: [
+      "Launched: 13 February 2024 by PM Narendra Modi.",
+      "Outlay: ₹75,021 crore; Goal: 1 crore households.",
+      "Nodal Ministry: Ministry of New and Renewable Energy.",
+    ],
+    prelimsFactsHi: [
+      "शुभारंभ: 13 फरवरी 2024।",
+      "परिव्यय: ₹75,021 करोड़; लक्ष्य: 1 करोड़ परिवार।",
+      "नोडल मंत्रालय: नवीन और नवीकरणीय ऊर्जा मंत्रालय।",
+    ],
+    mainsAngleEn: "Accelerates India's Panchamrit clean energy transition, lowers DISCOM subsidy burden, and promotes decentralized green power.",
+    mainsAngleHi: "भारत के स्वच्छ ऊर्जा संक्रमण को गति देती है, डिस्कॉम पर सब्सिडी बोझ घटाती है और विकेंद्रीकृत हरित ऊर्जा को बढ़ावा देती है।",
+    sourceUrl: "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2081250",
+  },
+  {
+    id: "pm-vishwakarma",
+    category: "Artisans & MSME",
+    launched: "17 Sep 2023",
+    ministryEn: "Ministry of Micro, Small & Medium Enterprises (MSME)",
+    ministryHi: "सूक्ष्म, लघु और मध्यम उद्यम मंत्रालय (MSME)",
+    titleEn: "PM Vishwakarma Yojana",
+    titleHi: "पीएम विश्वकर्मा योजना",
+    summaryEn: "Central Sector Scheme fully funded by the Union Government to provide end-to-end support to traditional artisans and craftspeople across 18 traditional trades.",
+    summaryHi: "18 पारंपरिक व्यवसायों से जुड़े कारीगरों और शिल्पकारों को समग्र सहायता देने के लिए केंद्र सरकार द्वारा पूर्णतः वित्तपोषित केंद्रीय क्षेत्र की योजना।",
+    keyProvisionsEn: [
+      "Built on three pillars: Samman (Recognition), Samarthya (Skill), and Samriddhi (Prosperity).",
+      "Financial outlay of ₹13,000 crore for FY 2023-24 to FY 2027-28.",
+      "Concessional loans at fixed 5% interest rate (with 8% interest subvention borne by Government) + digital transaction incentives.",
+    ],
+    keyProvisionsHi: [
+      "तीन स्तंभों पर आधारित: सम्मान, सामर्थ्य और समृद्धि।",
+      "वित्त वर्ष 2023-24 से 2027-28 के लिए ₹13,000 करोड़ का परिव्यय।",
+      "5% की रियायती ब्याज दर पर ऋण (8% ब्याज अनुदान सरकार द्वारा) और डिजिटल लेन-देन प्रोत्साहन।",
+    ],
+    prelimsFactsEn: [
+      "Launched: 17 September 2023; Central Sector Scheme.",
+      "Covers 18 traditional trades; 30 lakh beneficiary target achieved.",
+      "Three-tier verification and approval mechanism.",
+    ],
+    prelimsFactsHi: [
+      "शुभारंभ: 17 सितंबर 2023; केंद्रीय क्षेत्र की योजना।",
+      "18 पारंपरिक व्यवसाय शामिल; 30 लाख लाभार्थी लक्ष्य प्राप्त।",
+      "तीन-स्तरीय सत्यापन एवं अनुमोदन प्रक्रिया।",
+    ],
+    mainsAngleEn: "Formalizes the unorganized artisan economy, preserves indigenous heritage crafts, and links local skills with domestic and global value chains.",
+    mainsAngleHi: "असंगठित कारीगर अर्थव्यवस्था को औपचारिक बनाती है, पारंपरिक शिल्प को संरक्षित करती है और स्थानीय कौशल को बाज़ार से जोड़ती है।",
+    sourceUrl: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2310717",
+  },
+  {
+    id: "pm-kisan",
+    category: "Agriculture",
+    launched: "2019",
+    ministryEn: "Ministry of Agriculture & Farmers Welfare",
+    ministryHi: "कृषि एवं किसान कल्याण मंत्रालय",
+    titleEn: "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+    titleHi: "प्रधानमंत्री किसान सम्मान निधि (PM-KISAN)",
+    summaryEn: "Central Sector Direct Benefit Transfer (DBT) income-support scheme providing direct financial assistance to eligible farmer families across India to meet agricultural input and household needs.",
+    summaryHi: "पात्र किसान परिवारों को कृषि आदानों और घरेलू आवश्यकताओं के लिए सीधे बैंक खाते में वित्तीय सहायता प्रदान करने वाली केंद्रीय प्रत्यक्ष लाभ अंतरण (DBT) योजना।",
+    keyProvisionsEn: [
+      "Direct cash transfer into Aadhaar-seeded bank accounts of farmers via DBT.",
+      "Over ₹4.3 lakh crore directly transferred to farmers' accounts cumulatively.",
+      "Eliminates middlemen through digital registration and verification.",
+    ],
+    keyProvisionsHi: [
+      "DBT के माध्यम से किसानों के आधार-लिंक्ड बैंक खातों में सीधी नकद सहायता।",
+      "अब तक ₹4.3 लाख करोड़ से अधिक की राशि सीधे किसानों के खातों में अंतरित।",
+      "डिजिटल पंजीकरण और सत्यापन से बिचौलियों की भूमिका समाप्त।",
+    ],
+    prelimsFactsEn: [
+      "Type: 100% Central Sector Scheme via DBT.",
+      "Cumulative transfers: Over ₹4.3 lakh crore.",
+      "Focus: Income stability for agricultural households.",
+    ],
+    prelimsFactsHi: [
+      "प्रकार: DBT आधारित 100% केंद्रीय क्षेत्र की योजना।",
+      "कुल अंतरण: ₹4.3 लाख करोड़ से अधिक।",
+      "मुख्य उद्देश्य: किसान परिवारों को आय सहायता।",
+    ],
+    mainsAngleEn: "Strengthens rural liquidity before sowing seasons and reduces distress borrowing among small and marginal farmers.",
+    mainsAngleHi: "बुवाई से पहले ग्रामीण तरलता बढ़ाती है और छोटे व सीमांत किसानों की कर्ज पर निर्भरता कम करती है।",
+    sourceUrl: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2273146",
+  },
+  {
+    id: "ayushman-bharat-pmjay",
+    category: "Health & Social Security",
+    launched: "2018",
+    ministryEn: "Ministry of Health & Family Welfare (NHA)",
+    ministryHi: "स्वास्थ्य एवं परिवार कल्याण मंत्रालय (NHA)",
+    titleEn: "Ayushman Bharat – PM Jan Arogya Yojana (PM-JAY)",
+    titleHi: "आयुष्मान भारत – पीएम जन आरोग्य योजना (PM-JAY)",
+    summaryEn: "World's largest government-funded healthcare assurance programme offering cashless health cover up to ₹5 lakh per family per year for secondary and tertiary care hospitalization.",
+    summaryHi: "माध्यमिक और तृतीयक स्तर के अस्पताल में भर्ती के लिए प्रति परिवार प्रति वर्ष ₹5 लाख तक का कैशलेस स्वास्थ्य बीमा कवर देने वाला विश्व का सबसे बड़ा सरकारी स्वास्थ्य कार्यक्रम।",
+    keyProvisionsEn: [
+      "Health cover of ₹5 lakh per family per year for secondary and tertiary hospitalization.",
+      "Covers 55–60 crore economically vulnerable beneficiaries across India.",
+      "Cashless, paperless, and portable treatment across empanelled public and private hospitals.",
+    ],
+    keyProvisionsHi: [
+      "प्रति परिवार प्रति वर्ष ₹5 लाख का माध्यमिक व तृतीयक उपचार कवर।",
+      "देश भर के 55–60 करोड़ पात्र लाभार्थियों को सुरक्षा।",
+      "सूचीबद्ध सरकारी व निजी अस्पतालों में कैशलेस व पोर्टेबल इलाज।",
+    ],
+    prelimsFactsEn: [
+      "Coverage: ₹5 lakh per family per year.",
+      "Scope: Secondary and tertiary care hospitalization (not OPD).",
+      "Implementing agency: National Health Authority (NHA).",
+    ],
+    prelimsFactsHi: [
+      "कवर सीमा: ₹5 लाख प्रति परिवार प्रति वर्ष।",
+      "दायरा: माध्यमिक एवं तृतीयक अस्पताल उपचार।",
+      "कार्यान्वयन एजेंसी: राष्ट्रीय स्वास्थ्य प्राधिकरण (NHA)।",
+    ],
+    mainsAngleEn: "Directly curtails catastrophic out-of-pocket health expenditure (OOPE) and advances Universal Health Coverage (SDG 3).",
+    mainsAngleHi: "अत्यधिक जेब-खर्च (OOPE) को कम करती है और सार्वभौमिक स्वास्थ्य कवरेज (SDG 3) की दिशा में बड़ा कदम है।",
+    sourceUrl: "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=151873&ModuleId=3&reg=3&lang=1",
+  },
+  {
+    id: "jal-jeevan-mission",
+    category: "Water & Rural Infra",
+    launched: "2019",
+    ministryEn: "Ministry of Jal Shakti",
+    ministryHi: "जल शक्ति मंत्रालय",
+    titleEn: "Jal Jeevan Mission (Har Ghar Jal)",
+    titleHi: "जल जीवन मिशन (हर घर जल)",
+    summaryEn: "Flagship mission aimed at providing safe and adequate drinking water through individual functional household tap connections to rural households across India.",
+    summaryHi: "भारत के प्रत्येक ग्रामीण परिवार को नल के माध्यम से सुरक्षित और पर्याप्त पेयजल उपलब्ध कराने का प्रमुख राष्ट्रीय मिशन।",
+    keyProvisionsEn: [
+      "Tap water connections delivered to over 16 crore rural households.",
+      "Special saturation focus on Aspirational Districts, tribal villages, and PVTG habitations.",
+      "Covers rural schools, Anganwadi centres, and community institutions.",
+    ],
+    keyProvisionsHi: [
+      "16 करोड़ से अधिक ग्रामीण परिवारों तक नल से जल कनेक्शन।",
+      "आकांक्षी जिलों, जनजातीय गांवों और PVTG बस्तियों के पूर्ण संतृप्तीकरण पर विशेष ध्यान।",
+      "ग्रामीण स्कूलों और आंगनवाड़ी केंद्रों में भी नल जल सुविधा।",
+    ],
+    prelimsFactsEn: [
+      "Nodal Ministry: Ministry of Jal Shakti.",
+      "Progress: Over 16 crore rural households with tap water.",
+      "Community-led water quality monitoring via Village Water & Sanitation Committees.",
+    ],
+    prelimsFactsHi: [
+      "नोडल मंत्रालय: जल शक्ति मंत्रालय।",
+      "उपलब्धि: 16 करोड़ से अधिक ग्रामीण घरों में नल जल।",
+      "ग्राम जल एवं स्वच्छता समितियों द्वारा जन-भागीदारी आधारित निगरानी।",
+    ],
+    mainsAngleEn: "Reduces water-borne diseases, eases time-poverty of rural women, and improves long-term rural public health outcomes.",
+    mainsAngleHi: "जलजनित रोगों को कम करता है, ग्रामीण महिलाओं का समय बचाता है और ग्रामीण जन-स्वास्थ्य में सुधार लाता है।",
+    sourceUrl: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2273146",
+  },
+  {
+    id: "pm-awas-yojana",
+    category: "Housing for All",
+    launched: "2015",
+    ministryEn: "MoHUA (Urban) & Ministry of Rural Development (Gramin)",
+    ministryHi: "आवासन और शहरी कार्य मंत्रालय (शहरी) व ग्रामीण विकास मंत्रालय (ग्रामीण)",
+    titleEn: "Pradhan Mantri Awas Yojana (PMAY – Urban & Gramin)",
+    titleHi: "प्रधानमंत्री आवास योजना (PMAY – शहरी एवं ग्रामीण)",
+    summaryEn: "Flagship affordable housing programme with Urban and Gramin components providing pucca houses with basic civic amenities to eligible poor families.",
+    summaryHi: "ग्रामीण और शहरी दोनों क्षेत्रों के पात्र गरीब परिवारों को बुनियादी सुविधाओं सहित पक्का मकान उपलब्ध कराने की प्रमुख आवास योजना।",
+    keyProvisionsEn: [
+      "Over 4 crore pucca houses completed cumulatively under PMAY (Rural & Urban).",
+      "Strong women empowerment focus: majority of urban/joint titles in women's names.",
+      "Converges with Swachh Bharat toilets, Ujjwala LPG, and electricity connections.",
+    ],
+    keyProvisionsHi: [
+      "ग्रामीण एवं शहरी मिलाकर 4 करोड़ से अधिक पक्के मकान निर्मित।",
+      "महिला सशक्तिकरण पर बल: अधिकांश घरों का स्वामित्व महिलाओं के नाम या संयुक्त।",
+      "स्वच्छ भारत शौचालय, उज्ज्वला और बिजली योजनाओं के साथ अभिसरण (Convergence)।",
+    ],
+    prelimsFactsEn: [
+      "Two components: PMAY-Urban (MoHUA) and PMAY-Gramin (MoRD).",
+      "Milestone: Over 4 crore pucca houses built.",
+      "DBT-linked stage-wise financial assistance with geo-tagged monitoring.",
+    ],
+    prelimsFactsHi: [
+      "दो घटक: PMAY-शहरी और PMAY-ग्रामीण।",
+      "उपलब्धि: 4 करोड़ से अधिक पक्के घर तैयार।",
+      "जियो-टैगिंग निगरानी के साथ चरणबद्ध DBT सहायता।",
+    ],
+    mainsAngleEn: "Addresses multidimensional poverty, creates durable household assets, and stimulates rural-urban construction employment.",
+    mainsAngleHi: "बहुआयामी गरीबी कम करती है, स्थायी पारिवारिक संपत्ति बनाती है और निर्माण क्षेत्र में रोजगार बढ़ाती है।",
+    sourceUrl: "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=151873&ModuleId=3&reg=3&lang=1",
+  },
+  {
+    id: "swachh-bharat-mission",
+    category: "Sanitation & Hygiene",
+    launched: "2014",
+    ministryEn: "Ministry of Jal Shakti (Gramin) & MoHUA (Urban)",
+    ministryHi: "जल शक्ति मंत्रालय (ग्रामीण) एवं आवासन व शहरी कार्य मंत्रालय (शहरी)",
+    titleEn: "Swachh Bharat Mission (SBM)",
+    titleHi: "स्वच्छ भारत मिशन (SBM)",
+    summaryEn: "Nationwide sanitation and cleanliness movement launched in 2014 to eliminate open defecation, improve solid-liquid waste management, and promote behavioural change.",
+    summaryHi: "खुले में शौच समाप्त करने, ठोस-तरल अपशिष्ट प्रबंधन सुधारने और स्वच्छता व्यवहार परिवर्तन के लिए 2014 में शुरू राष्ट्रीय जन-आंदोलन।",
+    keyProvisionsEn: [
+      "Around 12 crore toilets constructed across rural and urban India.",
+      "Over 5 lakh villages declared Open Defecation Free (ODF) / ODF Plus.",
+      "Phase-II focuses on ODF sustainability and greywater/plastic waste management.",
+    ],
+    keyProvisionsHi: [
+      "देश भर में लगभग 12 करोड़ शौचालयों का निर्माण।",
+      "5 लाख से अधिक गांव खुले में शौच मुक्त (ODF / ODF Plus) घोषित।",
+      "द्वितीय चरण में ODF स्थिरता और ठोस/प्लास्टिक कचरा प्रबंधन पर जोर।",
+    ],
+    prelimsFactsEn: [
+      "Launched: 2014 as a national Jan Andolan.",
+      "Impact: ~12 crore toilets built; 5 lakh+ ODF villages.",
+      "Linked directly to SDG 6 (Clean Water & Sanitation).",
+    ],
+    prelimsFactsHi: [
+      "शुभारंभ: 2014 में राष्ट्रीय जन-आंदोलन के रूप में।",
+      "प्रभाव: ~12 करोड़ शौचालय; 5 लाख से अधिक ODF गांव।",
+      "SDG 6 (स्वच्छ जल एवं स्वच्छता) से सीधा जुड़ाव।",
+    ],
+    mainsAngleEn: "Improves women's dignity and safety, reduces diarrheal disease burden, and strengthens Gram Panchayat waste governance.",
+    mainsAngleHi: "महिलाओं की गरिमा व सुरक्षा बढ़ाता है, संक्रामक रोग घटाता है और ग्राम पंचायतों में अपशिष्ट प्रबंधन मजबूत करता है।",
+    sourceUrl: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2273146",
+  },
+  {
+    id: "pm-ujjwala-yojana",
+    category: "Clean Cooking & Women",
+    launched: "2016",
+    ministryEn: "Ministry of Petroleum & Natural Gas",
+    ministryHi: "पेट्रोलियम एवं प्राकृतिक गैस मंत्रालय",
+    titleEn: "Pradhan Mantri Ujjwala Yojana (PMUY)",
+    titleHi: "प्रधानमंत्री उज्ज्वला योजना (PMUY)",
+    summaryEn: "Social welfare scheme launched in 2016 to provide clean cooking fuel (LPG) connections to women from economically disadvantaged households, replacing firewood and biomass.",
+    summaryHi: "ग्रामीण व गरीब परिवारों की महिलाओं को लकड़ी-उपले के धुएं से मुक्त कर स्वच्छ रसोई ईंधन (LPG) कनेक्शन देने के लिए 2016 में शुरू योजना।",
+    keyProvisionsEn: [
+      "Over 10.3 crore deposit-free LPG connections provided to women beneficiaries.",
+      "Directly reduces indoor air pollution and respiratory illnesses among women and children.",
+      "Saves drudgery and time spent collecting firewood.",
+    ],
+    keyProvisionsHi: [
+      "10.3 करोड़ से अधिक महिलाओं को बिना जमानत (Deposit-free) LPG कनेक्शन।",
+      "घरेलू वायु प्रदूषण और श्वसन रोगों में सीधा सुधार।",
+      "ईंधन लकड़ी इकट्ठा करने के श्रम और समय की बचत।",
+    ],
+    prelimsFactsEn: [
+      "Launched: 2016; Nodal Ministry: Petroleum & Natural Gas.",
+      "Connections: Over 10.3 crore LPG connections.",
+      "Connection is issued strictly in the name of an adult woman.",
+    ],
+    prelimsFactsHi: [
+      "शुभारंभ: 2016; मंत्रालय: पेट्रोलियम एवं प्राकृतिक गैस।",
+      "उपलब्धि: 10.3 करोड़ से अधिक LPG कनेक्शन।",
+      "कनेक्शन वयस्क महिला के नाम पर जारी किया जाता है।",
+    ],
+    mainsAngleEn: "Combines health, gender equity, and forest conservation by reducing biomass combustion and household carbon emissions.",
+    mainsAngleHi: "स्वास्थ्य, लैंगिक समानता और पर्यावरण संरक्षण तीनों को एक साथ साधती है।",
+    sourceUrl: "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=151873&ModuleId=3&reg=3&lang=1",
+  },
+  {
+    id: "pm-jan-dhan-yojana",
+    category: "Financial Inclusion",
+    launched: "2014",
+    ministryEn: "Ministry of Finance",
+    ministryHi: "वित्त मंत्रालय",
+    titleEn: "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
+    titleHi: "प्रधानमंत्री जन धन योजना (PMJDY)",
+    summaryEn: "National Mission for Financial Inclusion ensuring universal access to zero-balance bank accounts, RuPay debit cards, accident insurance, and Direct Benefit Transfers.",
+    summaryHi: "प्रत्येक नागरिक को जीरो-बैलेंस बैंक खाता, RuPay डेबिट कार्ड, बीमा और DBT सेवा से जोड़ने वाला राष्ट्रीय वित्तीय समावेशन मिशन।",
+    keyProvisionsEn: [
+      "Around 52 crore Jan Dhan bank accounts opened across India.",
+      "Forms the core 'J' (Jan Dhan) of the JAM Trinity (Jan Dhan–Aadhaar–Mobile).",
+      "Enables leak-proof DBT transfers for welfare schemes, pensions, and subsidies.",
+    ],
+    keyProvisionsHi: [
+      "देश भर में लगभग 52 करोड़ जन धन बैंक खाते खोले गए।",
+      "JAM त्रिमूर्ति (जन धन–आधार–मोबाइल) का प्रमुख आधार स्तंभ।",
+      "सरकारी सब्सिडी और पेंशन का बिना रिसाव सीधा हस्तांतरण (DBT)।",
+    ],
+    prelimsFactsEn: [
+      "Nodal Ministry: Ministry of Finance (Dept. of Financial Services).",
+      "Scale: ~52 crore accounts opened.",
+      "Zero-balance basic savings bank deposit account with RuPay card.",
+    ],
+    prelimsFactsHi: [
+      "मंत्रालय: वित्त मंत्रालय (वित्तीय सेवा विभाग)।",
+      "विस्तार: लगभग 52 करोड़ खाते।",
+      "जीरो-बैलेंस खाता एवं RuPay डेबिट कार्ड सुविधा।",
+    ],
+    mainsAngleEn: "Formalized household savings, curtailed welfare leakages, and built India's Digital Public Infrastructure foundation.",
+    mainsAngleHi: "घरेलू बचत को औपचारिक बैंकिंग से जोड़ा और भारत के डिजिटल पब्लिक इंफ्रास्ट्रक्चर की नींव मजबूत की।",
+    sourceUrl: "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=151873&ModuleId=3&reg=3&lang=1",
+  },
+  {
+    id: "lakhpati-didi-day-nrlm",
+    category: "Women Livelihoods",
+    launched: "DAY-NRLM / Lakhpati Didi",
+    ministryEn: "Ministry of Rural Development",
+    ministryHi: "ग्रामीण विकास मंत्रालय",
+    titleEn: "Lakhpati Didi Initiative (DAY-NRLM)",
+    titleHi: "लखपति दीदी पहल (DAY-NRLM)",
+    summaryEn: "Women-led rural livelihood initiative under Deendayal Antyodaya Yojana – National Rural Livelihood Mission aiming to enable 3 crore SHG women to earn over ₹1 lakh annually.",
+    summaryHi: "दीनदयाल अंत्योदय योजना (DAY-NRLM) के अंतर्गत स्वयं सहायता समूह (SHG) की 3 करोड़ महिलाओं की वार्षिक पारिवारिक आय ₹1,00,000 से अधिक करने की पहल।",
+    keyProvisionsEn: [
+      "Over 10 crore women mobilized into 90.76 lakh Self-Help Groups (SHGs).",
+      "Government resolve to empower 3 crore women as 'Lakhpati Didis' (annual income > ₹1,00,000).",
+      "Supports diversified rural enterprises, micro-credit, skill training, and market linkages.",
+    ],
+    keyProvisionsHi: [
+      "90.76 लाख स्वयं सहायता समूहों (SHG) में 10 करोड़ से अधिक महिलाएं संगठित।",
+      "3 करोड़ महिलाओं को 'लखपति दीदी' (वार्षिक आय ₹1,00,000 से अधिक) बनाने का लक्ष्य।",
+      "विविध ग्रामीण उद्यम, सूक्ष्म ऋण, कौशल प्रशिक्षण और बाज़ार संपर्क में सहायता।",
+    ],
+    prelimsFactsEn: [
+      "Definition: SHG member with annual household income exceeding ₹1,00,000.",
+      "Target: 3 crore Lakhpati Didis.",
+      "Framework: DAY-NRLM under Ministry of Rural Development.",
+    ],
+    prelimsFactsHi: [
+      "परिभाषा: ₹1,00,000 से अधिक वार्षिक आय वाली SHG महिला सदस्य।",
+      "लक्ष्य: 3 करोड़ लखपति दीदी।",
+      "ढांचा: ग्रामीण विकास मंत्रालय का DAY-NRLM मिशन।",
+    ],
+    mainsAngleEn: "Transforms rural women from credit-takers to grassroots micro-entrepreneurs and strengthens women-led development.",
+    mainsAngleHi: "ग्रामीण महिलाओं को जमीनी उद्यमी बनाती है और महिला-नेतृत्व विकास (Women-led Development) को साकार करती है।",
+    sourceUrl: "https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=154590&ModuleId=3&reg=37&lang=1",
+  },
+];
