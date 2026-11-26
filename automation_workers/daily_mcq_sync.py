@@ -16,7 +16,7 @@ REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-a
 WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com").strip().rstrip("/")
 RELEASE_TAG = "PDFs"
 
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
 GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
 FORBIDDEN_SCRIPT_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-NCERT-3Layer-Bot)"}
@@ -152,7 +152,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                 json={
                     "model": model,
                     "temperature": temperature,
-                    "max_tokens": 8192,
+                    "max_tokens": 5500,
                     "response_format": {"type": "json_object"},
                     "messages": [{"role": "user", "content": prompt}],
                 },
@@ -163,6 +163,20 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                 parsed = _clean_json_text(txt)
                 if parsed:
                     return parsed, f"groq:{model}"
+            elif r.status_code == 429:
+                print(f"[groq 429 {model}] TPM limit — waiting 25s and retrying once...")
+                time.sleep(25)
+                r2 = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
+                    json={"model": model, "temperature": temperature, "max_tokens": 5500, "response_format": {"type": "json_object"}, "messages": [{"role": "user", "content": prompt}]},
+                    timeout=65,
+                )
+                if r2.ok:
+                    parsed = _clean_json_text(r2.json()["choices"][0]["message"]["content"])
+                    if parsed:
+                        return parsed, f"groq:{model}"
+                print(f"[groq ERR {model}] {r2.status_code}: {r2.text[:140]}")
             else:
                 print(f"[groq ERR {model}] {r.status_code}: {r.text[:140]}")
         except Exception as e:
@@ -482,7 +496,7 @@ def main():
     for bname, cnt, spec in batches:
         qs = generate_verified_batch(today_ist, spec, cnt, avoid_topics, bname)
         all_qs.extend(qs)
-        time.sleep(2)
+        time.sleep(8)
 
     for idx, q in enumerate(all_qs, 1):
         q["id"] = idx
