@@ -10,8 +10,6 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 GEMINI_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
 GROQ_KEY = (os.getenv("GROQ_API_KEY") or "").strip()
-SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").strip().rstrip("/")
-SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
 BOT_SECRET = (os.getenv("BOT_API_SECRET") or "").strip()
 GITHUB_TOKEN = (os.getenv("GITHUB_TOKEN") or "").strip()
 REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-academy-web").strip()
@@ -21,7 +19,7 @@ RELEASE_TAG = "PDFs"
 GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
 FORBIDDEN_SCRIPT_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
-HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-25MCQ-Bot)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-NCERT-3Layer-Bot)"}
 
 
 def has_forbidden_script(obj) -> bool:
@@ -48,30 +46,7 @@ def cms_post(key: str, value) -> bool:
     return r.ok
 
 
-def fetch_recent_ca_context() -> str:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return ""
-    try:
-        r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/current_affairs?select=title,why_in_news,prelims_facts,published_date&order=created_at.desc&limit=12",
-            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-            timeout=20,
-        )
-        if not r.ok:
-            return ""
-        lines = []
-        for row in r.json()[:10]:
-            t = row.get("title") or ""
-            w = row.get("why_in_news") or ""
-            f = " | ".join(row.get("prelims_facts") or []) if isinstance(row.get("prelims_facts"), list) else str(row.get("prelims_facts") or "")
-            lines.append(f"- {t}: {w} ({f[:240]})")
-        return "\n".join(lines)
-    except Exception as e:
-        print(f"[CA fetch warn] {e}")
-        return ""
-
-
-def parse_json_array(raw: str):
+def _clean_json_text(raw: str):
     if not raw:
         return None
     s = raw.strip()
@@ -79,119 +54,218 @@ def parse_json_array(raw: str):
         s = re.sub(r"^```[a-zA-Z]*\s*", "", s)
         s = re.sub(r"\s*```$", "", s)
     try:
-        data = json.loads(s)
+        return json.loads(s)
     except Exception:
         m = re.search(r"\{[\s\S]*\}", s)
         if not m:
             return None
         try:
-            data = json.loads(m.group(0))
+            return json.loads(m.group(0))
         except Exception:
             return None
-    qs = data.get("questions") if isinstance(data, dict) else data
-    if not isinstance(qs, list) or not qs:
+
+
+def validate_question_strict(q: dict) -> dict | None:
+    """Layer 3: Programmatic consistency, answer-key alignment, depth, and script gate."""
+    if not isinstance(q, dict):
         return None
-    if has_forbidden_script(qs):
-        print("[BLOCKED URDU/ARABIC SCRIPT] Retrying fallback model")
+    if has_forbidden_script(q):
         return None
-    valid = []
-    for q in qs:
-        if not isinstance(q, dict):
-            continue
-        corr = str(q.get("correct", "")).strip().upper()[:1]
-        if corr not in ("A", "B", "C", "D"):
-            continue
-        if not q.get("questionEn") or not q.get("questionHi"):
-            continue
-        if not isinstance(q.get("optionsEn"), dict) or not isinstance(q.get("optionsHi"), dict):
-            continue
-        valid.append({
-            "subject": str(q.get("subject") or "General Studies").strip(),
-            "questionEn": str(q["questionEn"]).strip(),
-            "questionHi": str(q["questionHi"]).strip(),
-            "optionsEn": {k: str(q["optionsEn"].get(k, "")).strip() for k in ("A", "B", "C", "D")},
-            "optionsHi": {k: str(q["optionsHi"].get(k, "")).strip() for k in ("A", "B", "C", "D")},
-            "correct": corr,
-            "explanationEn": str(q.get("explanationEn") or "").strip(),
-            "explanationHi": str(q.get("explanationHi") or "").strip(),
-        })
-    return valid
+    corr = str(q.get("correct", "")).strip().upper()[:1]
+    if corr not in ("A", "B", "C", "D"):
+        return None
+    q_en = str(q.get("questionEn") or "").strip()
+    q_hi = str(q.get("questionHi") or "").strip()
+    if len(q_en) < 25 or len(q_hi) < 25:
+        return None
+
+    o_en = q.get("optionsEn")
+    o_hi = q.get("optionsHi")
+    if not isinstance(o_en, dict) or not isinstance(o_hi, dict):
+        return None
+    opts_en = {k: str(o_en.get(k, "")).strip() for k in ("A", "B", "C", "D")}
+    opts_hi = {k: str(o_hi.get(k, "")).strip() for k in ("A", "B", "C", "D")}
+    if any(not v for v in opts_en.values()) or any(not v for v in opts_hi.values()):
+        return None
+    if len(set(v.lower() for v in opts_en.values())) < 4:
+        return None
+    if len(set(v.lower() for v in opts_hi.values())) < 4:
+        return None
+
+    exp_en = str(q.get("explanationEn") or "").strip()
+    exp_hi = str(q.get("explanationHi") or "").strip()
+    if len(exp_en) < 160 or len(exp_hi) < 160:
+        return None
+
+    # Catch answer-key mismatch if explanation explicitly names a different option letter
+    m_en = re.search(r"(?:correct\s+answer\s+is|option)\s*\(?([A-D])\)?\s*(?:is\s+correct)", exp_en, re.I)
+    if m_en and m_en.group(1).upper() != corr:
+        print(f"[LAYER-3 REJECT] Explanation mentions ({m_en.group(1)}) != correct ({corr})")
+        return None
+
+    return {
+        "subject": str(q.get("subject") or "General Studies").strip(),
+        "questionEn": q_en,
+        "questionHi": q_hi,
+        "optionsEn": opts_en,
+        "optionsHi": opts_hi,
+        "correct": corr,
+        "explanationEn": exp_en,
+        "explanationHi": exp_hi,
+    }
 
 
-def call_ai(prompt: str, min_count: int):
-    # 1. Gemini with 503 retry
-    if GEMINI_KEY:
-        for model in GEMINI_MODELS:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}"
-                body = {
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.25, "maxOutputTokens": 8192, "responseMimeType": "application/json"},
-                }
-                r = requests.post(url, json=body, timeout=60)
-                if r.status_code == 503:
-                    time.sleep(4)
-                    r = requests.post(url, json=body, timeout=60)
-                if r.ok:
-                    txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    qs = parse_json_array(txt)
-                    if qs and len(qs) >= min_count:
-                        print(f"[gemini OK] {model} -> {len(qs)} Qs")
-                        return qs[:min_count]
-                else:
-                    print(f"[gemini ERR {model}] {r.status_code}: {r.text[:140]}")
-            except Exception as e:
-                print(f"[gemini EXC {model}] {e}")
-
-    # 2. Groq production fallback
-    if GROQ_KEY:
-        for model in GROQ_MODELS:
-            try:
-                r = requests.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
-                    json={
-                        "model": model,
-                        "temperature": 0.25,
-                        "max_tokens": 8192,
-                        "response_format": {"type": "json_object"},
-                        "messages": [{"role": "user", "content": prompt}],
-                    },
-                    timeout=60,
-                )
-                if r.ok:
-                    txt = r.json()["choices"][0]["message"]["content"]
-                    qs = parse_json_array(txt)
-                    if qs and len(qs) >= min_count:
-                        print(f"[groq OK] {model} -> {len(qs)} Qs")
-                        return qs[:min_count]
-                else:
-                    print(f"[groq ERR {model}] {r.status_code}: {r.text[:140]}")
-            except Exception as e:
-                print(f"[groq EXC {model}] {e}")
-    return None
+def _call_gemini_raw(prompt: str, temperature: float = 0.2):
+    if not GEMINI_KEY:
+        return None, None
+    for model in GEMINI_MODELS:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}"
+            body = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": temperature, "maxOutputTokens": 8192, "responseMimeType": "application/json"},
+            }
+            r = requests.post(url, json=body, timeout=65)
+            if r.status_code == 503:
+                time.sleep(4)
+                r = requests.post(url, json=body, timeout=65)
+            if r.ok:
+                txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+                parsed = _clean_json_text(txt)
+                if parsed:
+                    return parsed, f"gemini:{model}"
+            else:
+                print(f"[gemini ERR {model}] {r.status_code}: {r.text[:140]}")
+        except Exception as e:
+            print(f"[gemini EXC {model}] {e}")
+    return None, None
 
 
-def build_batch_prompt(date_str: str, spec: str, count: int, ca_ctx: str, avoid_topics: list) -> str:
+def _call_groq_raw(prompt: str, temperature: float = 0.2):
+    if not GROQ_KEY:
+        return None, None
+    for model in GROQ_MODELS:
+        try:
+            r = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": model,
+                    "temperature": temperature,
+                    "max_tokens": 8192,
+                    "response_format": {"type": "json_object"},
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=65,
+            )
+            if r.ok:
+                txt = r.json()["choices"][0]["message"]["content"]
+                parsed = _clean_json_text(txt)
+                if parsed:
+                    return parsed, f"groq:{model}"
+            else:
+                print(f"[groq ERR {model}] {r.status_code}: {r.text[:140]}")
+        except Exception as e:
+            print(f"[groq EXC {model}] {e}")
+    return None, None
+
+
+def build_layer1_prompt(date_str: str, spec: str, count: int, avoid_topics: list) -> str:
     avoid_block = "\n".join(f"- {t[:90]}" for t in avoid_topics[:40]) if avoid_topics else "None"
-    return f"""You are the Senior NCERT Prelims Question Setter for ETERNAL CIVIL ACADEMY (UPSC, UPPSC, BPSC).
-Generate EXACTLY {count} high-quality, strictly Class 6-12 NCERT-based bilingual MCQs for {date_str}.
+    return f"""You are a Senior UPSC CSE, UPPSC PCS, and BPSC Prelims Paper Setter for ETERNAL CIVIL ACADEMY.
+Generate EXACTLY {count} ADVANCED, 100% FACTUALLY VERIFIED bilingual MCQs for {date_str}.
 
 STRICT SUBJECT QUOTA (MUST MATCH EXACTLY):
 {spec}
 
-SOURCE BASE: Strictly Class 6-12 NCERT textbooks (History, Geography, Polity, Economics, Environment, Science). Mention the relevant NCERT concept/class in the explanation where helpful.
+LAYER-1 ACCURACY & DEPTH MANDATE (NON-NEGOTIABLE):
+1. 100% VERIFIED FACTS ONLY: Frame questions ONLY on well-established, indisputable facts from standard NCERT (Class 9-12), Constitution of India, M. Laxmikanth, Spectrum Modern India, R.S. Sharma, Satish Chandra, G.C. Leong, and standard Indian Economy/Science textbooks. NEVER guess obscure years, unverified numbers, or ambiguous dates.
+2. DIFFICULTY = UPSC CSE / UPPSC / BPSC Prelims Standard. STRICTLY FORBIDDEN: Easy school trivia (Class 4-8 basics).
+3. QUESTION FORMAT MIX in these {count} questions:
+   - 2 Multi-Statement questions ("Consider the following statements: 1... 2... 3... Which of the statements given above is/are correct?")
+   - 1 Assertion-Reason OR Chronological Order question
+   - 1 Match-the-Pairs / List-I with List-II question
+   - 1 High-Yield Conceptual / Analytical Prelims question
+4. SINGLE UNAMBIGUOUS ANSWER: Double-check that the marked letter ("A"/"B"/"C"/"D") matches the EXACT right option in BOTH English AND Hindi (same option order A, B, C, D in both languages!).
+5. DETAILED, FOUNDATIONAL EXPLANATION (MANDATORY — 6 to 8 sentences in BOTH English AND Hindi):
+   - First explain the BASIC CONCEPT of the topic clearly from scratch so even a beginner understands the foundation.
+   - Then explain WHY the correct option is factually right (with exact Article / Act / Year / Concept).
+   - Then explicitly explain WHY each incorrect statement/trap is wrong.
+   - End with 1 high-yield Prelims Revision Fact related to that topic.
+6. LANGUAGE: Pure English + pure standard Devanagari Hindi (हिन्दी). ZERO Urdu/Arabic/Persian script anywhere.
 
 RECENTLY ASKED QUESTIONS TO AVOID REPEATING:
 {avoid_block}
 
-STRICT RULES:
-1. Language: Pure English + pure standard Devanagari Hindi (हिन्दी). NEVER use Urdu/Arabic/Persian script anywhere.
-2. Mix UPSC/UPPSC style statements (1 & 2, Assertion-Reason, Match/Direct Factual) with 100% verified factual accuracy.
-3. Explanations must be crisp (2-3 lines) with key Prelims facts in both English and Hindi.
-4. Return ONLY valid JSON with key "questions": an array of {count} objects, each having:
-   subject, questionEn, questionHi, optionsEn (A,B,C,D), optionsHi (A,B,C,D), correct ("A"|"B"|"C"|"D"), explanationEn, explanationHi.
+Return ONLY valid JSON with key "questions": an array of {count} objects, each having:
+subject, questionEn, questionHi, optionsEn (A,B,C,D), optionsHi (A,B,C,D), correct ("A"|"B"|"C"|"D"), explanationEn, explanationHi.
 """
+
+
+def build_layer2_audit_prompt(draft_qs: list) -> str:
+    payload_str = json.dumps({"questions": draft_qs}, ensure_ascii=False)
+    return f"""You are the CHIEF FACT-CHECKER & INDEPENDENT AUDITOR for UPSC/UPPSC/BPSC Prelims at ETERNAL CIVIL ACADEMY.
+Audit EVERY SINGLE question below with extreme strictness. Zero factual error is acceptable.
+
+AUDIT CHECKLIST FOR EACH QUESTION:
+1. FACT VERIFICATION: Verify every Constitutional Article, Amendment, Act, Year, Historical Person/Event, River/Pass/Location, Economic Definition, and Scientific Fact. If ANY fact is wrong, doubtful, or outdated, FIX it completely with 100% verified textbook facts.
+2. ANSWER-KEY MATCH: Solve the question independently from scratch! Verify that "correct" ("A"|"B"|"C"|"D") matches the EXACT right option in BOTH optionsEn AND optionsHi. If there is any mismatch or ambiguity, FIX the options/correct letter so ONLY ONE option is indisputably correct.
+3. TRANSLATION ALIGNMENT: Verify questionHi and optionsHi have the EXACT same meaning, negations ("correct" vs "not correct"), and option order (A, B, C, D) as English. ZERO Urdu/Arabic script.
+4. EXPLANATION DEPTH: Ensure BOTH explanationEn and explanationHi are detailed (6-8 sentences), explaining: (a) basic concept from scratch, (b) why the correct option is right, (c) why wrong statements/options are wrong, and (d) key Prelims takeaway.
+
+DRAFT QUESTIONS TO AUDIT:
+{payload_str}
+
+Return ONLY valid JSON with key "questions" containing the FULLY VERIFIED & CORRECTED array of questions (same schema: subject, questionEn, questionHi, optionsEn, optionsHi, correct, explanationEn, explanationHi).
+"""
+
+
+def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: list, batch_name: str) -> list:
+    prompt1 = build_layer1_prompt(date_str, spec, count, avoid_topics)
+    raw1, src1 = _call_gemini_raw(prompt1, temperature=0.2)
+    if not raw1:
+        raw1, src1 = _call_groq_raw(prompt1, temperature=0.2)
+    if not raw1 or not isinstance(raw1.get("questions"), list):
+        raise RuntimeError(f"Layer-1 generation failed for {batch_name}")
+
+    draft_qs = [q for q in raw1["questions"] if isinstance(q, dict)][:count]
+    print(f"[{batch_name} LAYER-1 OK] {src1} generated {len(draft_qs)} draft Qs")
+
+    # Layer 2: Cross-model independent fact audit (prefer opposite provider!)
+    audit_prompt = build_layer2_audit_prompt(draft_qs)
+    if src1 and src1.startswith("gemini:") and GROQ_KEY:
+        raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
+        if not raw2:
+            raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+    else:
+        raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+        if not raw2:
+            raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
+
+    audited_candidates = raw2.get("questions") if (raw2 and isinstance(raw2.get("questions"), list)) else draft_qs
+    print(f"[{batch_name} LAYER-2 AUDIT] {src2 or 'fallback-layer1'} returned {len(audited_candidates)} Qs")
+
+    # Layer 3: Strict programmatic validation
+    verified = []
+    for q in audited_candidates:
+        vq = validate_question_strict(q)
+        if vq:
+            verified.append(vq)
+
+    # Top up from Layer-1 validated items if Layer-2 dropped any
+    if len(verified) < count:
+        for q in draft_qs:
+            if len(verified) >= count:
+                break
+            vq = validate_question_strict(q)
+            if vq and all(vq["questionEn"][:45] != x["questionEn"][:45] for x in verified):
+                verified.append(vq)
+
+    if len(verified) < count:
+        raise RuntimeError(f"{batch_name} passed only {len(verified)}/{count} after 3-layer verification")
+
+    print(f"[{batch_name} LAYER-3 PASSED] {count}/{count} verified Qs")
+    return verified[:count]
 
 
 def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
@@ -201,7 +275,7 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
     is_hi = lang == "hi"
     tag_lbl = "दैनिक NCERT क्विज़ (20 MCQs)" if is_hi else "Daily NCERT Quiz (20 MCQs)"
     title = f"दैनिक NCERT क्विज़ (20 MCQs) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 MCQs) — {date_str}"
-    sub = "Class 6-12 NCERT • +1 सही / -1/3 नेगेटिव मार्किंग • व्याख्या सहित" if is_hi else "Class 6-12 NCERT • +1 Correct / -1/3 Negative Marking • With Explanations"
+    sub = "UPSC • UPPSC • BPSC Prelims स्तर • +1 सही / -1/3 नेगेटिव मार्किंग • विस्तृत व्याख्या सहित" if is_hi else "UPSC • UPPSC • BPSC Prelims Level • +1 Correct / -1/3 Negative Marking • Detailed Explanations"
 
     logo_src = "https://www.eternalcivilacademy.com/logo.jpg"
     for cand in ("public/logo.jpg", "public/logo.png", "public/icon-192.png"):
@@ -222,11 +296,11 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
     for q in questions:
         qtxt = html.escape(q["questionHi"] if is_hi else q["questionEn"]).replace("\n", "<br/>")
         opts = q["optionsHi"] if is_hi else q["optionsEn"]
-        exp = html.escape(q["explanationHi"] if is_hi else q["explanationEn"])
+        exp = html.escape(q["explanationHi"] if is_hi else q["explanationEn"]).replace("\n", "<br/>")
         ans_lbl = "सही उत्तर" if is_hi else "Correct Answer"
-        exp_lbl = "व्याख्या" if is_hi else "Explanation"
+        exp_lbl = "विस्तृत व्याख्या" if is_hi else "Detailed Explanation"
         opt_html = "".join(f'<div class="qopt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
-        q_blocks.append(f'<div class="qcard"><div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div><div class="qtxt">{qtxt}</div><div class="qopts">{opt_html}</div><div class="qans"><b>{ans_lbl}: ({q["correct"]})</b> &mdash; <b>{exp_lbl}:</b> {exp}</div></div>')
+        q_blocks.append(f'<div class="qcard"><div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div><div class="qtxt">{qtxt}</div><div class="qopts">{opt_html}</div><div class="qans"><b>{ans_lbl}: ({q["correct"]})</b><br/><b>{exp_lbl}:</b> {exp}</div></div>')
 
     css = """
 @page {
@@ -244,8 +318,8 @@ body {
   color: #0f172a;
   margin: 0;
   padding: 0;
-  font-size: 10pt;
-  line-height: 1.45;
+  font-size: 9.8pt;
+  line-height: 1.48;
 }
 .wm {
   position: fixed;
@@ -284,81 +358,37 @@ body {
   border-radius: 99px;
   border: 1px solid #fecaca;
 }
-.hr-web {
-  display: block;
-  font-size: 8.5pt;
-  font-weight: 700;
-  color: #0B1B3D;
-  text-decoration: none;
-  margin-top: 4px;
-}
-.mt {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin: 10px 0 8px 0;
-  font-size: 8.5pt;
-}
+.hr-web { display: block; font-size: 8.5pt; font-weight: 700; color: #0B1B3D; text-decoration: none; margin-top: 4px; }
+.mt { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 8px 0; font-size: 8.5pt; }
 .bd { background: #E60000; color: #ffffff; font-weight: 800; padding: 3px 9px; border-radius: 5px; }
 .sb { background: #eef2ff; color: #3730a3; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
 h1 { font-size: 14pt; color: #0B1B3D; margin: 6px 0 10px 0; line-height: 1.3; }
-.wy {
-  background: #f8fafc;
-  border-left: 4px solid #E60000;
-  padding: 9px 13px;
-  border-radius: 0 8px 8px 0;
-  margin-bottom: 12px;
-  font-size: 9pt;
-}
+.wy { background: #f8fafc; border-left: 4px solid #E60000; padding: 9px 13px; border-radius: 0 8px 8px 0; margin-bottom: 12px; font-size: 9pt; }
 .st { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #E60000; margin-bottom: 3px; }
 .qcard {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 9px 12px;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.88);
+  padding: 10px 12px;
+  margin-bottom: 11px;
+  background: rgba(255, 255, 255, 0.9);
   page-break-inside: avoid;
 }
-.qmeta {
-  display: inline-block;
-  background: #eef2ff;
-  color: #3730a3;
-  font-size: 8pt;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 5px;
-  margin-bottom: 5px;
-}
-.qtxt { font-size: 10pt; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 5px; }
-.qopts { margin-left: 6px; margin-bottom: 6px; }
-.qopt { font-size: 9.4pt; color: #1e293b; margin-bottom: 2px; line-height: 1.4; }
+.qmeta { display: inline-block; background: #eef2ff; color: #3730a3; font-size: 8pt; font-weight: 800; padding: 2px 8px; border-radius: 5px; margin-bottom: 5px; }
+.qtxt { font-size: 10pt; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 6px; }
+.qopts { margin-left: 6px; margin-bottom: 7px; }
+.qopt { font-size: 9.4pt; color: #1e293b; margin-bottom: 2.5px; line-height: 1.4; }
 .qans {
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-left: 3.5px solid #E60000;
   border-radius: 6px;
-  padding: 6px 9px;
-  font-size: 8.8pt;
+  padding: 7px 10px;
+  font-size: 8.9pt;
   color: #1e293b;
-  line-height: 1.42;
+  line-height: 1.48;
 }
-.ft {
-  margin-top: 16px;
-  padding-top: 10px;
-  border-top: 2px solid #0B1B3D;
-  font-size: 8.5pt;
-  color: #334155;
-  page-break-inside: avoid;
-}
-.ft-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
+.ft { margin-top: 16px; padding-top: 10px; border-top: 2px solid #0B1B3D; font-size: 8.5pt; color: #334155; page-break-inside: avoid; }
+.ft-links { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .ft a { color: #0B1B3D; font-weight: 700; text-decoration: none; }
 .ft-copy { font-size: 8pt; color: #475569; text-align: center; font-weight: 600; }
 """
@@ -366,7 +396,7 @@ h1 { font-size: 14pt; color: #0B1B3D; margin: 6px 0 10px 0; line-height: 1.3; }
     doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>{css}</style></head><body>
 <div class="wm">www.eternalcivilacademy.com</div>
 <div class="hdr"><div class="hl"><img src="{logo_src}" class="lg"/><div><div class="br">ETERNAL CIVIL ACADEMY</div><div class="tg">Your Success, Our Commitment</div></div></div><div class="hr"><span class="hr-tag">{html.escape(tag_lbl)}</span><a href="https://www.eternalcivilacademy.com" class="hr-web">www.eternalcivilacademy.com</a></div></div>
-<div class="mt"><span class="bd">Class 6-12 NCERT</span><span class="sb">+1 / -1/3 Negative Marking</span><b>{html.escape(date_str)}</b></div>
+<div class="mt"><span class="bd">UPSC / UPPSC / BPSC Level</span><span class="sb">+1 / -1/3 Negative Marking</span><b>{html.escape(date_str)}</b></div>
 <h1>{html.escape(title)}</h1>
 <div class="wy"><div class="st">{html.escape(tag_lbl)}</div><div>{html.escape(sub)}</div></div>
 {''.join(q_blocks)}
@@ -374,6 +404,7 @@ h1 { font-size: 14pt; color: #0B1B3D; margin: 6px 0 10px 0; line-height: 1.3; }
 </body></html>"""
     HTML(string=doc_html).write_pdf(out_path)
     print(f"[PDF OK] {out_path} ({os.path.getsize(out_path)} bytes)")
+
 
 def upload_to_release(file_path: str, content_type: str) -> str:
     if not GITHUB_TOKEN:
@@ -405,33 +436,21 @@ def upload_to_release(file_path: str, content_type: str) -> str:
 
 def main():
     today_ist = datetime.now(IST).strftime("%Y-%m-%d")
-    print(f"[ECA Daily 25-MCQ] Starting for {today_ist}")
+    is_manual = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
+    print(f"[ECA Daily NCERT Quiz 3-Layer] Starting for {today_ist} (manual={is_manual})")
 
     existing_tests = cms_get("daily_practice_tests") or []
     if not isinstance(existing_tests, list):
         existing_tests = []
-    existing_today = next((t for t in existing_tests if isinstance(t, dict) and t.get("date") == today_ist), None)
-    if existing_today:
-        if os.getenv("GITHUB_EVENT_NAME") != "workflow_dispatch":
-            print(f"[SKIP] Daily NCERT Quiz for {today_ist} already published.")
-            return
-        print(f"[RE-RENDER] Manual run — re-rendering branded EN/HI PDFs for {today_ist} using existing 20 MCQs (0 AI calls)...")
-        jr = requests.get(existing_today["jsonUrl"], timeout=25)
-        jr.raise_for_status()
-        all_qs = jr.json().get("questions", [])
-        en_pdf = f"/tmp/ECA_Daily_NCERT_Quiz_English_{today_ist}.pdf"
-        hi_pdf = f"/tmp/ECA_Daily_NCERT_Quiz_Hindi_{today_ist}.pdf"
-        render_branded_pdf(all_qs, today_ist, "en", en_pdf)
-        render_branded_pdf(all_qs, today_ist, "hi", hi_pdf)
-        existing_today["englishPdfUrl"] = upload_to_release(en_pdf, "application/pdf")
-        existing_today["hindiPdfUrl"] = upload_to_release(hi_pdf, "application/pdf")
-        cms_post("daily_practice_tests", existing_tests)
-        print(f"[RE-RENDER SUCCESS] Updated branded PDFs for {today_ist}")
+    if not is_manual and any(t.get("date") == today_ist for t in existing_tests if isinstance(t, dict)):
+        print(f"[SKIP] Daily NCERT Quiz for {today_ist} already published.")
         return
 
-    # Load recent question titles to avoid repeats (last 5 tests)
+    # Collect recent questions from previous days (excluding today on manual re-run) to avoid repeats
     avoid_topics = []
-    for old in existing_tests[:5]:
+    for old in existing_tests[:6]:
+        if not isinstance(old, dict) or old.get("date") == today_ist:
+            continue
         try:
             if old.get("jsonUrl"):
                 jr = requests.get(old["jsonUrl"], timeout=15)
@@ -442,29 +461,29 @@ def main():
         except Exception:
             pass
 
-    ca_ctx = fetch_recent_ca_context()
+    # 4 focused micro-batches of 5 questions each = 20 verified MCQs
+    batches = [
+        ("Batch1-History", 5, """- 3 Modern History — UPSC/UPPSC/BPSC Prelims level: Acts, Constitutional development, Peasant/Tribal movements, Socio-religious reforms, Freedom struggle chronology (subject: "Modern History")
+- 1 Ancient History — Advanced level: IVC, Mauryan/Gupta polity & economy, Buddhism/Jainism philosophy, Sangam/Inscriptions (subject: "Ancient History")
+- 1 Medieval History — Advanced level: Delhi Sultanate/Mughal administration, Bhakti-Sufi, Vijayanagara/Maratha terms (subject: "Medieval History")"""),
+        ("Batch2-GeoEnv", 5, """- 2 Indian Geography — Advanced level: Monsoon/Jet Streams, River basins/Drainage, Soils, Himalayan/Peninsular physiography, Minerals (subject: "Indian Geography")
+- 1 World Geography — Advanced level: Ocean currents, Pressure belts, Plate tectonics, Climate zones, Straits/Biomes (subject: "World Geography")
+- 1 Mapping — Advanced India/World Map Prelims Q: North-South/East-West order, border states, tributaries, passes, or global straits (subject: "Mapping")
+- 1 Environment & Ecology — Advanced level: Biogeochemical cycles, Ecological succession, Biodiversity hotspots, Environmental Acts/Conventions (subject: "Environment")"""),
+        ("Batch3-PolityEcon", 5, """- 3 Indian Polity — Advanced UPSC/UPPSC/BPSC level: Constitutional Articles, Amendments, Federalism, Parliament/Committees, Judiciary, FR vs DPSP, Constitutional vs Statutory bodies (subject: "Polity")
+- 2 Economics — Advanced level: RBI Monetary Policy tools, Fiscal deficit/FRBM, BoP/Exchange rate, Inflation indices, National Income/GDP deflator, Banking/WTO concepts (subject: "Economics")"""),
+        ("Batch4-EnvSci", 5, """- 1 Environment & Ecology — Advanced level: Climate protocols, Wetland/Ramsar ecology, Pollution chemistry, IUCN/WPA schedules (subject: "Environment")
+- 1 Physics — Advanced applied PCS/UPSC level: Optics, Electromagnetism, Semiconductors, Nuclear/Space physics, Thermodynamics applications (subject: "Physics")
+- 1 Chemistry — Advanced applied PCS/UPSC level: Polymers, Alloys, Acid-Base/Electrochemistry, Isotopes, Industrial & Everyday Chemistry (subject: "Chemistry")
+- 2 Biology — Advanced NCERT/PCS level: Human physiology, Genetics/Biotechnology, Immunology/Diseases, Plant hormones/Photosynthesis, Cell biology (subject: "Biology")"""),
+    ]
 
-    batch1_spec = """- 3 Modern History from Class 8 & 12 NCERT (subject: "Modern History")
-- 1 Ancient History from Class 6 & 11-12 NCERT (subject: "Ancient History")
-- 1 Medieval History from Class 7 & 11-12 NCERT (subject: "Medieval History")
-- 2 Indian Geography from Class 9 & 11 NCERT (subject: "Indian Geography")
-- 1 World Geography from Class 6-11 NCERT (subject: "World Geography")
-- 1 Mapping from NCERT Atlas/Maps (subject: "Mapping")
-- 1 Environment & Ecology from Class 12 NCERT (subject: "Environment")"""
+    all_qs = []
+    for bname, cnt, spec in batches:
+        qs = generate_verified_batch(today_ist, spec, cnt, avoid_topics, bname)
+        all_qs.extend(qs)
+        time.sleep(2)
 
-    batch2_spec = """- 3 Indian Polity from Class 9-11 NCERT (subject: "Polity")
-- 2 Economics from Class 9-12 NCERT (subject: "Economics")
-- 1 Environment & Ecology from Class 12 NCERT (subject: "Environment")
-- 1 Physics from Class 6-10 NCERT Science (subject: "Physics")
-- 1 Chemistry from Class 6-10 NCERT Science (subject: "Chemistry")
-- 2 Biology from Class 6-12 NCERT Science/Biology (subject: "Biology")"""
-
-    q1 = call_ai(build_batch_prompt(today_ist, batch1_spec, 10, ca_ctx, avoid_topics), 10)
-    q2 = call_ai(build_batch_prompt(today_ist, batch2_spec, 10, "", avoid_topics), 10)
-    if not q1 or not q2:
-        raise RuntimeError(f"AI generation failed: batch1={bool(q1)} batch2={bool(q2)}")
-
-    all_qs = q1 + q2
     for idx, q in enumerate(all_qs, 1):
         q["id"] = idx
 
@@ -492,32 +511,11 @@ def main():
         "englishPdfUrl": en_pdf_url,
         "hindiPdfUrl": hi_pdf_url,
     }
-    updated_tests = [new_entry] + [t for t in existing_tests if t.get("date") != today_ist]
+    updated_tests = [new_entry] + [t for t in existing_tests if isinstance(t, dict) and t.get("date") != today_ist]
     if not cms_post("daily_practice_tests", updated_tests):
         raise RuntimeError("Failed to update daily_practice_tests in CMS")
 
-    # Also refresh Homepage quick Daily Practice MCQs widget with today's 5 Current Affairs MCQs
-    nocode = cms_get("nocode_cms")
-    if isinstance(nocode, dict):
-        nocode["dailyMcqs"] = [
-            {
-                "id": f"home-mcq-{today_ist}-{i+1}",
-                "subject": q["subject"],
-                "questionEn": q["questionEn"],
-                "questionHi": q["questionHi"],
-                "optionA": q["optionsEn"]["A"],
-                "optionB": q["optionsEn"]["B"],
-                "optionC": q["optionsEn"]["C"],
-                "optionD": q["optionsEn"]["D"],
-                "correct": q["correct"],
-                "explanationEn": q["explanationEn"],
-                "explanationHi": q["explanationHi"],
-            }
-            for i, q in enumerate(all_qs[:5])
-        ]
-        cms_post("nocode_cms", nocode)
-
-    print(f"[SUCCESS] Published 25-MCQ Test + EN/HI PDFs for {today_ist}")
+    print(f"[SUCCESS] Published 3-Layer Verified 20-MCQ Daily NCERT Quiz + EN/HI PDFs for {today_ist}")
 
 
 if __name__ == "__main__":
