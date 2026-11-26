@@ -497,7 +497,7 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
 }
 * { box-sizing: border-box; }
 body {
-  font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'DejaVu Sans', sans-serif;
+  font-family: 'DejaVu Sans', 'Noto Sans Devanagari', 'Lohit Devanagari', sans-serif;
   color: #0f172a;
   margin: 0;
   padding: 0;
@@ -510,7 +510,7 @@ body {
   left: 50%;
   transform: translate(-50%, -50%) rotate(-32deg);
   font-size: 35pt;
-  font-weight: 900;
+  font-weight: 700;
   color: #0B1B3D;
   opacity: 0.10;
   white-space: nowrap;
@@ -532,22 +532,23 @@ body {
 }
 .hl { display: flex; align-items: center; gap: 9px; }
 .lg { height: 35px; width: auto; max-width: 115px; object-fit: contain; border-radius: 4px; background: #ffffff; padding: 2px; }
-.br { font-size: 13.5pt; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; line-height: 1.12; }
-.tg { font-size: 8.5pt; color: #fecaca; font-weight: 800; margin-top: 2px; letter-spacing: 0.2px; }
+.br { font-family: 'DejaVu Sans', sans-serif; font-size: 14.5pt; font-weight: 700; color: #ffffff; letter-spacing: 0.6px; line-height: 1.12; }
+.tg { font-family: 'DejaVu Sans', sans-serif; font-size: 8.5pt; color: #fecaca; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px; }
 .hr { text-align: right; }
 .hr-tag {
   display: inline-block;
   background: #E60000;
   color: #ffffff;
-  font-size: 7.5pt;
-  font-weight: 800;
-  padding: 2px 8px;
+  font-family: 'DejaVu Sans', 'Noto Sans Devanagari', sans-serif;
+  font-size: 8.2pt;
+  font-weight: 700;
+  padding: 3px 10px;
   border-radius: 99px;
 }
 .hr-tg {
   display: block;
   font-size: 7.8pt;
-  font-weight: 800;
+  font-weight: 700;
   color: #e0f2fe;
   text-decoration: none;
   margin-top: 3px;
@@ -563,10 +564,10 @@ body {
   font-size: 8pt;
 }
 .ft-left { text-align: left; line-height: 1.35; }
-.ft-brand { font-size: 8.6pt; font-weight: 900; color: #0B1B3D; display: block; }
+.ft-brand { font-size: 8.6pt; font-weight: 700; color: #0B1B3D; display: block; }
 .ft-web { font-size: 7.8pt; font-weight: 700; color: #E60000; text-decoration: none; display: block; }
 .ft-right { text-align: right; line-height: 1.4; }
-.ft-social { display: block; font-size: 7.8pt; font-weight: 800; color: #0B1B3D; text-decoration: none; }
+.ft-social { display: block; font-size: 7.8pt; font-weight: 700; color: #0B1B3D; text-decoration: none; }
 .title-box, .qcard { position: relative; z-index: 1; }
 .title-box {
   background: #f8fafc;
@@ -576,7 +577,7 @@ body {
   padding: 8px 12px;
   margin: 0 0 11px 0;
 }
-.title-box h1 { font-size: 13pt; font-weight: 900; color: #0B1B3D; margin: 0; line-height: 1.3; }
+.title-box h1 { font-size: 13pt; font-weight: 700; color: #0B1B3D; margin: 0; line-height: 1.3; }
 .qcard {
   border: 1px solid #cbd5e1;
   border-top: 2.5px solid #0B1B3D;
@@ -590,7 +591,7 @@ body {
   background: #0B1B3D;
   color: #ffffff;
   font-size: 7.8pt;
-  font-weight: 800;
+  font-weight: 700;
   padding: 2px 8px;
   border-radius: 4px;
   margin-bottom: 5px;
@@ -623,7 +624,7 @@ body {
   background: #E60000;
   color: #ffffff;
   font-size: 8pt;
-  font-weight: 800;
+  font-weight: 700;
   padding: 1.5px 7px;
   border-radius: 4px;
   margin-bottom: 5px;
@@ -631,7 +632,7 @@ body {
 .exp-body { margin-top: 2px; }
 .exp-line { margin-bottom: 4.5px; line-height: 1.52; }
 .exp-line:last-child { margin-bottom: 0; }
-.fact { font-weight: 900; color: #0B1B3D; }
+.fact { font-weight: 700; color: #0B1B3D; }
 """
 
     doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>{css}</style></head><body>
