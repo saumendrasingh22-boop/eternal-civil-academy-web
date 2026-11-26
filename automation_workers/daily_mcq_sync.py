@@ -44,7 +44,7 @@ def is_similar_to_past(q_text: str, past_sets: list) -> bool:
         if len(ps) < 3:
             continue
         inter = len(cur & ps)
-        if inter >= 3 and (inter / min(len(cur), len(ps))) >= 0.55:
+        if inter >= 4 and (inter / min(len(cur), len(ps))) >= 0.72:
             return True
     return False
 
@@ -128,8 +128,8 @@ def validate_question_strict(q: dict):
         return None
     corr = m_corr.group(0)
 
-    q_en = str(q.get("questionEn") or "").strip()
-    q_hi = str(q.get("questionHi") or "").strip()
+    q_en = str(q.get("questionEn") or q.get("question_en") or "").strip()
+    q_hi = str(q.get("questionHi") or q.get("question_hi") or "").strip()
     if len(q_en) < 20 or len(q_hi) < 20:
         print(f"[L3-DROP] short question en={len(q_en)} hi={len(q_hi)}")
         return None
@@ -143,8 +143,8 @@ def validate_question_strict(q: dict):
         print("[L3-DROP] duplicate options")
         return None
 
-    exp_en = str(q.get("explanationEn") or "").strip()
-    exp_hi = str(q.get("explanationHi") or "").strip()
+    exp_en = str(q.get("explanationEn") or q.get("explanation_en") or "").strip()
+    exp_hi = str(q.get("explanationHi") or q.get("explanation_hi") or "").strip()
     if len(exp_en) < 60 or len(exp_hi) < 50:
         print(f"[L3-DROP] short exp en={len(exp_en)} hi={len(exp_hi)}")
         return None
