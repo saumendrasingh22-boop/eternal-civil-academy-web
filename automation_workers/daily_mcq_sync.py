@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
-GEMINI_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
-GROQ_KEY = (os.getenv("GROQ_API_KEY") or "").strip()
+GEMINI_KEY = (os.getenv("QUIZ_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
+GROQ_KEY = (os.getenv("QUIZ_GROQ_API_KEY") or os.getenv("GROQ_API_KEY") or "").strip()
 BOT_SECRET = (os.getenv("BOT_API_SECRET") or "").strip()
 GITHUB_TOKEN = (os.getenv("GITHUB_TOKEN") or "").strip()
 REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-academy-web").strip()

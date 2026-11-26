@@ -29,6 +29,8 @@ jobs:
 
       - name: Generate 20-MCQ Daily NCERT Quiz and Branded EN/HI PDFs
         env:
+          QUIZ_GEMINI_API_KEY: ${{ secrets.QUIZ_GEMINI_API_KEY }}
+          QUIZ_GROQ_API_KEY: ${{ secrets.QUIZ_GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
