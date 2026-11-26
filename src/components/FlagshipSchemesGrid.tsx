@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, ExternalLink, Landmark, Star } from "lucide-rea
 import { FLAGSHIP_SCHEMES_10 } from "@/lib/flagshipSchemesData";
 
 export default function FlagshipSchemesGrid({ lang }: { lang: "en" | "hi" }) {
-  const [openId, setOpenId] = useState<string>(FLAGSHIP_SCHEMES_10[0].id);
+  const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const isHi = lang === "hi";
 
   return (
@@ -23,14 +23,14 @@ export default function FlagshipSchemesGrid({ lang }: { lang: "en" | "hi" }) {
 
       <div className="grid grid-cols-1 gap-4">
         {FLAGSHIP_SCHEMES_10.map((s, idx) => {
-          const isOpen = openId === s.id;
+          const isOpen = Boolean(openIds[s.id]);
           const provisions = isHi ? s.keyProvisionsHi : s.keyProvisionsEn;
           const facts = isHi ? s.prelimsFactsHi : s.prelimsFactsEn;
           return (
             <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <button
                 type="button"
-                onClick={() => setOpenId(isOpen ? "" : s.id)}
+                onClick={() => setOpenIds((prev) => ({ ...prev, [s.id]: !prev[s.id] }))}
                 className="w-full text-left p-5 flex items-start justify-between gap-4 hover:bg-slate-50/70 transition"
               >
                 <div className="space-y-1.5">

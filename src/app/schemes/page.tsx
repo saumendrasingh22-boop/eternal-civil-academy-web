@@ -29,7 +29,7 @@ export default function SchemesPage() {
 
   const schemeItems = STRUCTURED_CURRENT_AFFAIRS.filter((item) =>
     scope === "central"
-      ? item.sectionType === "central_scheme"
+      ? false
       : item.sectionType === "state_scheme" && item.stateName === selectedState
   );
 
@@ -101,7 +101,7 @@ export default function SchemesPage() {
       )}
 
       <div className="space-y-4">
-        {schemeItems.length > 0 ? (
+        {scope !== 'state' ? null : schemeItems.length > 0 ? (
           schemeItems.map((sc) => {
             const loc = getLocalizedCa(sc, lang);
             return (
