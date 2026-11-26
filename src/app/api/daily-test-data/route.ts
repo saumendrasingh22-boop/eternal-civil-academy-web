@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     const data = await upstream.json();
     return NextResponse.json(data, {
       status: 200,
-      headers: { "Cache-Control": "public, max-age=300" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch {
     return NextResponse.json({ error: "Test load error" }, { status: 502 });
