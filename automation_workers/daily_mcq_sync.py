@@ -689,6 +689,28 @@ def main():
     existing_tests = cms_get("daily_practice_tests") or []
     if not isinstance(existing_tests, list):
         existing_tests = []
+    if os.getenv("REBUILD_EXISTING_PDFS", "").lower() == "true":
+        print(f"[REBUILD PDFs] Re-rendering {len(existing_tests)} existing test(s) with 0 AI calls...")
+        for entry in existing_tests:
+            if not isinstance(entry, dict) or not entry.get("jsonUrl") or not entry.get("date"):
+                continue
+            dt = entry["date"]
+            jr = requests.get(entry["jsonUrl"], timeout=25)
+            jr.raise_for_status()
+            qs = jr.json().get("questions", [])
+            if not qs:
+                continue
+            en_p = f"/tmp/ECA_Daily_NCERT_Quiz_English_{dt}.pdf"
+            hi_p = f"/tmp/ECA_Daily_NCERT_Quiz_Hindi_{dt}.pdf"
+            render_branded_pdf(qs, dt, "en", en_p)
+            render_branded_pdf(qs, dt, "hi", hi_p)
+            entry["englishPdfUrl"] = upload_to_release(en_p, "application/pdf")
+            entry["hindiPdfUrl"] = upload_to_release(hi_p, "application/pdf")
+            print(f"[REBUILD OK] {dt}")
+        cms_post("daily_practice_tests", existing_tests)
+        print("[REBUILD COMPLETE] All existing PDFs updated cleanly!")
+        return
+
     if not is_manual and any(t.get("date") == today_ist for t in existing_tests if isinstance(t, dict)):
         print(f"[SKIP] Daily NCERT Quiz for {today_ist} already published.")
         return
