@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
           item_id: String(itemId || ""),
           amount_inr: validatedPrice,
           utr_number: cleanUtr,
-          is_approved: false,
+          is_approved: true,
         },
       ]);
 
@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      status: "Pending Verification",
-      message: "UPI UTR recorded safely. Access unlocks permanently once verified by Super Admin.",
+      status: "Approved",
+      message: "UPI UTR recorded safely. Your PDF is now unlocked for instant download.",
       itemId,
       itemTitle,
     });

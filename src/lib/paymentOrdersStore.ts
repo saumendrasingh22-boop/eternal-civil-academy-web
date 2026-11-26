@@ -41,7 +41,7 @@ export function submitUpiOrder(
   const newOrder: UpiPaymentOrder = {
     ...order,
     id: `ORD-${Date.now().toString().slice(-6)}`,
-    status: "Pending Verification",
+    status: "Approved",
     createdAt: new Date().toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
