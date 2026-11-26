@@ -17,9 +17,35 @@ WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com"
 RELEASE_TAG = "PDFs"
 
 GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
-GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+GROQ_MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
 FORBIDDEN_SCRIPT_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-NCERT-3Layer-Bot)"}
+
+STOPWORDS_60D = {
+    "which", "following", "statements", "statement", "consider", "correct", "incorrect", "above", "given",
+    "with", "from", "that", "this", "about", "regarding", "between", "among", "under", "into", "india",
+    "indian", "their", "have", "been", "were", "only", "both", "neither", "none", "what", "when", "where",
+    "match", "list", "pairs", "correctly", "matched", "assertion", "reason", "arrange", "chronological",
+    "order", "context", "reference", "respect", "true", "false", "choose", "code", "below",
+}
+
+
+def _q_tokens(text: str) -> set:
+    words = re.findall(r"[a-zA-Z0-9]{4,}", (text or "").lower())
+    return {w for w in words if w not in STOPWORDS_60D}
+
+
+def is_similar_to_past(q_text: str, past_sets: list) -> bool:
+    cur = _q_tokens(q_text)
+    if len(cur) < 3:
+        return False
+    for ps in past_sets:
+        if len(ps) < 3:
+            continue
+        inter = len(cur & ps)
+        if inter >= 3 and (inter / min(len(cur), len(ps))) >= 0.55:
+            return True
+    return False
 
 
 def has_forbidden_script(obj) -> bool:
@@ -56,7 +82,7 @@ def _clean_json_text(raw: str):
     try:
         return json.loads(s)
     except Exception:
-        m = re.search(r"\{[\s\S]*\}", s)
+        m = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", s)
         if not m:
             return None
         try:
@@ -65,61 +91,52 @@ def _clean_json_text(raw: str):
             return None
 
 
+def _normalize_opts(raw_opts):
+    if isinstance(raw_opts, list) and len(raw_opts) >= 4:
+        return {k: str(raw_opts[i]).strip() for i, k in enumerate(("A", "B", "C", "D"))}
+    if isinstance(raw_opts, dict):
+        out = {}
+        for k in ("A", "B", "C", "D"):
+            val = None
+            for cand in (k, k.lower(), f"{k})", f"{k}.", f"({k})"):
+                if cand in raw_opts and str(raw_opts[cand]).strip():
+                    val = str(raw_opts[cand]).strip()
+                    break
+            if val is None:
+                return None
+            out[k] = val
+        return out
+    return None
 
-STOPWORDS_60D = {
-    "which","following","statements","statement","consider","correct","incorrect","above","given",
-    "with","from","that","this","about","regarding","between","among","under","into","india",
-    "indian","their","have","been","were","only","both","neither","none","what","when","where",
-    "match","list","pairs","correctly","matched","assertion","reason","arrange","chronological",
-    "order","context","reference","respect","true","false","choose","code","below"
-}
 
-def _q_tokens(text: str) -> set:
-    words = re.findall(r"[a-zA-Z0-9]{4,}", (text or "").lower())
-    return {w for w in words  if w not in STOPWORDS_60D}
-
-def is_similar_to_past(q_text: str, past_sets: list) -> bool:
-    cur = _q_tokens(q_text)
-    if len(cur) < 3:
-        return False
-    for ps in past_sets:
-        if len(ps) < 3:
-            continue
-        inter = len(cur & ps)
-        if inter >= 3 and (inter / min(len(cur), len(ps))) >= 0.55:
-            return True
-    return False
-
-def validate_question_strict(q: dict) -> dict | None:
+def validate_question_strict(q: dict):
     """Layer 3: Programmatic consistency, answer-key alignment, depth, and script gate."""
     if not isinstance(q, dict):
+        print("[L3-DROP] not dict")
         return None
     if has_forbidden_script(q):
+        print("[L3-DROP] forbidden script")
         return None
-    corr = str(q.get("correct", "")).strip().upper()[:1]
-    if corr not in ("A", "B", "C", "D"):
+    corr_raw = str(q.get("correct", "")).strip().upper()
+    m_corr = re.search(r"[A-D]", corr_raw)
+    if not m_corr:
+        print(f"[L3-DROP] bad correct={corr_raw!r}")
         return None
+    corr = m_corr.group(0)
+
     q_en = str(q.get("questionEn") or "").strip()
     q_hi = str(q.get("questionHi") or "").strip()
-    if len(q_en) < 25 or len(q_hi) < 25:
+    if len(q_en) < 20 or len(q_hi) < 20:
+        print(f"[L3-DROP] short question en={len(q_en)} hi={len(q_hi)}")
         return None
 
-    o_en = q.get("optionsEn")
-    o_hi = q.get("optionsHi")
-    if isinstance(o_en, list) and len(o_en) == 4:
-        o_en = dict(zip(("A", "B", "C", "D"), o_en))
-    if isinstance(o_hi, list) and len(o_hi) == 4:
-        o_hi = dict(zip(("A", "B", "C", "D"), o_hi))
-    if not isinstance(o_en, dict) or not isinstance(o_hi, dict):
-        print("[L3-DROP] options not dict/list4")
+    opts_en = _normalize_opts(q.get("optionsEn"))
+    opts_hi = _normalize_opts(q.get("optionsHi"))
+    if not opts_en or not opts_hi:
+        print("[L3-DROP] invalid options")
         return None
-    opts_en = {k: str(o_en.get(k, o_en.get(k.lower(), ""))).strip() for k in ("A", "B", "C", "D")}
-    opts_hi = {k: str(o_hi.get(k, o_hi.get(k.lower(), ""))).strip() for k in ("A", "B", "C", "D")}
-    if any(not v for v in opts_en.values()) or any(not v for v in opts_hi.values()):
-        return None
-    if len(set(v.lower() for v in opts_en.values())) < 4:
-        return None
-    if len(set(v.lower() for v in opts_hi.values())) < 4:
+    if len(set(v.lower() for v in opts_en.values())) < 4 or len(set(v.lower() for v in opts_hi.values())) < 4:
+        print("[L3-DROP] duplicate options")
         return None
 
     exp_en = str(q.get("explanationEn") or "").strip()
@@ -128,10 +145,9 @@ def validate_question_strict(q: dict) -> dict | None:
         print(f"[L3-DROP] short exp en={len(exp_en)} hi={len(exp_hi)}")
         return None
 
-    # Catch answer-key mismatch if explanation explicitly names a different option letter
     m_en = re.search(r"(?:correct\s+answer\s+is|option)\s*\(?([A-D])\)?\s*(?:is\s+correct)", exp_en, re.I)
     if m_en and m_en.group(1).upper() != corr:
-        print(f"[LAYER-3 REJECT] Explanation mentions ({m_en.group(1)}) != correct ({corr})")
+        print(f"[L3-DROP] exp ({m_en.group(1)}) != correct ({corr})")
         return None
 
     return {
@@ -177,37 +193,23 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
         return None, None
     for model in GROQ_MODELS:
         try:
-            r = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": model,
-                    "temperature": temperature,
-                    "max_tokens": 5500,
-                    
-                    "messages": [{"role": "user", "content": prompt}],
-                },
-                timeout=90,
-            )
+            hdr = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
+            payload = {
+                "model": model,
+                "temperature": temperature,
+                "max_tokens": 5500,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=hdr, json=payload, timeout=90)
+            if r.status_code == 429:
+                print(f"[groq 429 {model}] TPM limit — waiting 20s and retrying once...")
+                time.sleep(20)
+                r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=hdr, json=payload, timeout=90)
             if r.ok:
                 txt = r.json()["choices"][0]["message"]["content"]
                 parsed = _clean_json_text(txt)
                 if parsed:
                     return parsed, f"groq:{model}"
-            elif r.status_code == 429:
-                print(f"[groq 429 {model}] TPM limit — waiting 25s and retrying once...")
-                time.sleep(25)
-                r2 = requests.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
-                    json={"model": model, "temperature": temperature, "max_tokens": 5500,  "messages": [{"role": "user", "content": prompt}]},
-                    timeout=90,
-                )
-                if r2.ok:
-                    parsed = _clean_json_text(r2.json()["choices"][0]["message"]["content"])
-                    if parsed:
-                        return parsed, f"groq:{model}"
-                print(f"[groq ERR {model}] {r2.status_code}: {r2.text[:140]}")
             else:
                 print(f"[groq ERR {model}] {r.status_code}: {r.text[:140]}")
         except Exception as e:
@@ -216,52 +218,41 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
 
 
 def build_layer1_prompt(date_str: str, spec: str, count: int, avoid_topics: list) -> str:
-    avoid_block = "\n".join(f"- {t[:90]}" for t in avoid_topics[:80]) if avoid_topics else "None"
+    avoid_block = "\n".join(f"- {t[:85]}" for t in avoid_topics[:60]) if avoid_topics else "None"
     return f"""You are a Senior UPSC CSE, UPPSC PCS, and BPSC Prelims Paper Setter for ETERNAL CIVIL ACADEMY.
 Generate EXACTLY {count} ADVANCED, 100% FACTUALLY VERIFIED bilingual MCQs for {date_str}.
 
-STRICT SUBJECT QUOTA (MUST MATCH EXACTLY):
+STRICT SUBJECT QUOTA:
 {spec}
 
-LAYER-1 ACCURACY & DEPTH MANDATE (NON-NEGOTIABLE):
-1. 100% VERIFIED FACTS ONLY: Frame questions ONLY on well-established, indisputable facts from standard NCERT (Class 9-12), Constitution of India, M. Laxmikanth, Spectrum Modern India, R.S. Sharma, Satish Chandra, G.C. Leong, and standard Indian Economy/Science textbooks. NEVER guess obscure years, unverified numbers, or ambiguous dates.
-2. DIFFICULTY = UPSC CSE / UPPSC / BPSC Prelims Standard. STRICTLY FORBIDDEN: Easy school trivia (Class 4-8 basics).
-3. QUESTION FORMAT MIX in these {count} questions:
-   - 2 Multi-Statement questions ("Consider the following statements: 1... 2... 3... Which of the statements given above is/are correct?")
-   - 1 Assertion-Reason OR Chronological Order question
-   - 1 Match-the-Pairs / List-I with List-II question
-   - 1 High-Yield Conceptual / Analytical Prelims question
-4. SINGLE UNAMBIGUOUS ANSWER: Double-check that the marked letter ("A"/"B"/"C"/"D") matches the EXACT right option in BOTH English AND Hindi (same option order A, B, C, D in both languages!).
-5. DETAILED, FOUNDATIONAL EXPLANATION (MANDATORY — 6 to 8 sentences in BOTH English AND Hindi):
-   - First explain the BASIC CONCEPT of the topic clearly from scratch so even a beginner understands the foundation.
-   - Then explain WHY the correct option is factually right (with exact Article / Act / Year / Concept).
-   - Then explicitly explain WHY each incorrect statement/trap is wrong.
-   - End with 1 high-yield Prelims Revision Fact related to that topic.
-6. LANGUAGE: Pure English + pure standard Devanagari Hindi (हिन्दी). ZERO Urdu/Arabic/Persian script anywhere.
+LAYER-1 ACCURACY & DEPTH MANDATE:
+1. 100% VERIFIED FACTS ONLY: Use only indisputable facts from standard NCERT (Class 9-12), Constitution of India, M. Laxmikanth, Spectrum Modern India, R.S. Sharma, Satish Chandra, G.C. Leong. NEVER guess obscure years or ambiguous dates.
+2. DIFFICULTY = UPSC CSE / UPPSC / BPSC Prelims Standard. NO easy Class 4-8 school trivia.
+3. FORMAT MIX: Multi-Statement (1, 2, 3), Assertion-Reason / Chronology, Match-the-Pairs, and Analytical Prelims Qs.
+4. SINGLE UNAMBIGUOUS ANSWER: Ensure "correct" ("A"|"B"|"C"|"D") matches the exact right option in BOTH optionsEn and optionsHi (same A, B, C, D order).
+5. DETAILED EXPLANATION (5-7 sentences in BOTH English & Hindi): Start with the basic concept from scratch, explain why the right option is correct (with Article/Act/Year/NCERT fact), explain why wrong options/statements are false, and end with 1 Prelims takeaway.
+6. LANGUAGE: Pure English + pure Devanagari Hindi (हिन्दी). ZERO Urdu/Arabic script.
 
-RECENTLY ASKED QUESTIONS TO AVOID REPEATING:
+AVOID REPEATING THESE QUESTIONS:
 {avoid_block}
 
-Return ONLY valid JSON with key "questions": an array of {count} objects, each having:
-subject, questionEn, questionHi, optionsEn (A,B,C,D), optionsHi (A,B,C,D), correct ("A"|"B"|"C"|"D"), explanationEn, explanationHi.
+Return ONLY valid JSON: {{"questions": [ ...{count} objects with keys: subject, questionEn, questionHi, optionsEn (dict A,B,C,D), optionsHi (dict A,B,C,D), correct ("A"|"B"|"C"|"D"), explanationEn, explanationHi ]}}
 """
 
 
 def build_layer2_audit_prompt(draft_qs: list) -> str:
     payload_str = json.dumps({"questions": draft_qs}, ensure_ascii=False)
-    return f"""You are the CHIEF FACT-CHECKER & INDEPENDENT AUDITOR for UPSC/UPPSC/BPSC Prelims at ETERNAL CIVIL ACADEMY.
-Audit EVERY SINGLE question below with extreme strictness. Zero factual error is acceptable.
+    return f"""You are the CHIEF FACT-CHECKER for UPSC/UPPSC/BPSC Prelims at ETERNAL CIVIL ACADEMY.
+Audit these {len(draft_qs)} question(s) strictly:
+1. Verify every Article, Amendment, Act, Year, Fact, and Geography/Science/Economy detail. Fix any factual error immediately.
+2. Solve independently and verify "correct" ("A"|"B"|"C"|"D") matches BOTH optionsEn and optionsHi. Fix any mismatch.
+3. Ensure pure English + pure Devanagari Hindi (no Urdu/Arabic) and detailed 5-7 sentence explanations.
+CRITICAL: Return ALL {len(draft_qs)} questions in the EXACT same JSON schema.
 
-AUDIT CHECKLIST FOR EACH QUESTION:
-1. FACT VERIFICATION: Verify every Constitutional Article, Amendment, Act, Year, Historical Person/Event, River/Pass/Location, Economic Definition, and Scientific Fact. If ANY fact is wrong, doubtful, or outdated, FIX it completely with 100% verified textbook facts.
-2. ANSWER-KEY MATCH: Solve the question independently from scratch! Verify that "correct" ("A"|"B"|"C"|"D") matches the EXACT right option in BOTH optionsEn AND optionsHi. If there is any mismatch or ambiguity, FIX the options/correct letter so ONLY ONE option is indisputably correct.
-3. TRANSLATION ALIGNMENT: Verify questionHi and optionsHi have the EXACT same meaning, negations ("correct" vs "not correct"), and option order (A, B, C, D) as English. ZERO Urdu/Arabic script.
-4. EXPLANATION DEPTH: Ensure BOTH explanationEn and explanationHi are detailed (6-8 sentences), explaining: (a) basic concept from scratch, (b) why the correct option is right, (c) why wrong statements/options are wrong, and (d) key Prelims takeaway.
-
-DRAFT QUESTIONS TO AUDIT:
+QUESTIONS:
 {payload_str}
 
-CRITICAL: Return ALL {len(draft_qs)} questions (NEVER omit any question; fix any factual or key error in place). Return ONLY valid JSON with key "questions" containing all {len(draft_qs)} FULLY VERIFIED & CORRECTED questions (same schema: subject, questionEn, questionHi, optionsEn, optionsHi, correct, explanationEn, explanationHi).
+Return ONLY valid JSON: {{"questions": [ ...all {len(draft_qs)} verified objects ]}}
 """
 
 
@@ -269,27 +260,33 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
     verified = []
     seen_prefix = set()
     past_token_sets = [_q_tokens(t) for t in avoid_topics if t]
-    for attempt in range(1, 6):
+
+    for attempt in range(1, 5):
         need = count - len(verified)
         if need <= 0:
             break
+        req_cnt = min(need + 1, 5) if attempt > 1 else need
+        temp1 = min(0.65, 0.2 + 0.12 * (attempt - 1))
         cur_avoid = avoid_topics + [x["questionEn"] for x in verified]
-        prompt1 = build_layer1_prompt(date_str, spec, need, cur_avoid)
-        temp1 = min(0.7, 0.2 + 0.12 * (attempt - 1))
+
+        prompt1 = build_layer1_prompt(date_str, spec, req_cnt, cur_avoid)
         raw1, src1 = _call_gemini_raw(prompt1, temperature=temp1)
         if not raw1:
             raw1, src1 = _call_groq_raw(prompt1, temperature=temp1)
+
         qlist1 = raw1 if isinstance(raw1, list) else (raw1.get("questions") if isinstance(raw1, dict) else None)
         if not isinstance(qlist1, list) or not qlist1:
             print(f"[{batch_name} attempt {attempt}] Layer-1 empty, retrying...")
-            time.sleep(5)
+            time.sleep(4)
             continue
-        draft_qs = [q for q in qlist1 if isinstance(q, dict)][:need]
+
+        draft_qs = [q for q in qlist1 if isinstance(q, dict)][:req_cnt]
         print(f"[{batch_name} attempt {attempt} LAYER-1 OK] {src1} -> {len(draft_qs)} draft Qs")
 
+        # Layer 2: Cross-model independent fact audit in compact 2-Q chunks
         audited = []
         for ci in range(0, len(draft_qs), 2):
-            chunk = draft_qs[ci:ci+3]
+            chunk = draft_qs[ci:ci + 2]
             audit_prompt = build_layer2_audit_prompt(chunk)
             if src1 and src1.startswith("gemini:") and GROQ_KEY:
                 raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
@@ -304,25 +301,32 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
             print(f"[{batch_name} attempt {attempt} LAYER-2 AUDIT] {src2 or 'fallback'} -> {len(part)}/{len(chunk)} Qs")
             audited.extend(part)
 
+        # Layer 3: Strict programmatic validation + 60-day repeat guard
         for q in audited:
             vq = validate_question_strict(q)
-            if vq and vq["questionEn"][:45] not in seen_prefix:
-                if is_similar_to_past(vq["questionEn"], past_token_sets):
-                    print(f"[BLOCKED 60-DAY REPEAT] {vq['questionEn'][:65]}")
-                    continue
-                seen_prefix.add(vq["questionEn"][:45])
-                past_token_sets.append(_q_tokens(vq["questionEn"]))
-                verified.append(vq)
-                if len(verified) >= count:
-                    break
+            if not vq:
+                continue
+            pref = vq["questionEn"][:45]
+            if pref in seen_prefix:
+                continue
+            if is_similar_to_past(vq["questionEn"], past_token_sets):
+                print(f"[BLOCKED 60-DAY REPEAT] {vq['questionEn'][:65]}")
+                continue
+            seen_prefix.add(pref)
+            past_token_sets.append(_q_tokens(vq["questionEn"]))
+            verified.append(vq)
+            if len(verified) >= count:
+                break
+
         if len(verified) < count:
-            print(f"[{batch_name}] Verified {len(verified)}/{count}, auto-generating remaining {count - len(verified)}...")
-            time.sleep(4)
+            print(f"[{batch_name}] Verified {len(verified)}/{count}, generating buffer for remaining {count - len(verified)}...")
+            time.sleep(3)
 
     if len(verified) < count:
         raise RuntimeError(f"{batch_name} passed only {len(verified)}/{count} after 3-layer verification")
     print(f"[{batch_name} LAYER-3 PASSED] {count}/{count} verified Qs")
     return verified[:count]
+
 
 def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
     import base64 as _b64
@@ -538,7 +542,7 @@ def main():
     for bname, cnt, spec in batches:
         qs = generate_verified_batch(today_ist, spec, cnt, avoid_topics, bname)
         all_qs.extend(qs)
-        time.sleep(8)
+        time.sleep(2)
 
     for idx, q in enumerate(all_qs, 1):
         q["id"] = idx
