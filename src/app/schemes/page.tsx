@@ -1,7 +1,7 @@
 "use client";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 import FlagshipSchemesGrid from "@/components/FlagshipSchemesGrid";
-import StateSchemesGrid from '@/components/StateSchemesGrid';
+import StateSchemesGrid from "@/components/StateSchemesGrid";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -102,7 +102,7 @@ export default function SchemesPage() {
       )}
 
       <div className="space-y-4">
-        {scope !== 'state' ? null : false && schemeItems.length > 0 ? (
+        {true ? null : schemeItems.length > 0 ? (
           schemeItems.map((sc) => {
             const loc = getLocalizedCa(sc, lang);
             return (
@@ -140,6 +140,7 @@ export default function SchemesPage() {
         )}
       </div>
           {scope === "central" && <FlagshipSchemesGrid lang={lang} />}
+      {scope === "state" && <StateSchemesGrid lang={lang} selectedState={selectedState} />}
       <LiveAdminSectionFeed sectionMatch="Schemes" />
     </div>
   );
