@@ -13,7 +13,7 @@ export default function FlagshipSchemesGrid({ lang }: { lang: "en" | "hi" }) {
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div>
           <span className="inline-block bg-red-50 text-[#E60000] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-            {isHi ? "60 प्रमुख केंद्रीय योजनाएं (PIB सत्यापित)" : "60 Flagship Central Schemes (PIB Verified)"}
+            {isHi ? "80 प्रमुख केंद्रीय योजनाएं (PIB सत्यापित)" : "80 Flagship Central Schemes (PIB Verified)"}
           </span>
           <h2 className="text-lg sm:text-xl font-extrabold text-[#0B1B3D] mt-1">
             {isHi ? "UPSC / UPPSC / BPSC के लिए विस्तृत सरकारी योजनाएं" : "Comprehensive Government Schemes for Prelims & Mains"}
