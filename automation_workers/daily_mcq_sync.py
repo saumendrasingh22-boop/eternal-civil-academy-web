@@ -106,10 +106,15 @@ def validate_question_strict(q: dict) -> dict | None:
 
     o_en = q.get("optionsEn")
     o_hi = q.get("optionsHi")
+    if isinstance(o_en, list) and len(o_en) == 4:
+        o_en = dict(zip(("A", "B", "C", "D"), o_en))
+    if isinstance(o_hi, list) and len(o_hi) == 4:
+        o_hi = dict(zip(("A", "B", "C", "D"), o_hi))
     if not isinstance(o_en, dict) or not isinstance(o_hi, dict):
+        print("[L3-DROP] options not dict/list4")
         return None
-    opts_en = {k: str(o_en.get(k, "")).strip() for k in ("A", "B", "C", "D")}
-    opts_hi = {k: str(o_hi.get(k, "")).strip() for k in ("A", "B", "C", "D")}
+    opts_en = {k: str(o_en.get(k, o_en.get(k.lower(), ""))).strip() for k in ("A", "B", "C", "D")}
+    opts_hi = {k: str(o_hi.get(k, o_hi.get(k.lower(), ""))).strip() for k in ("A", "B", "C", "D")}
     if any(not v for v in opts_en.values()) or any(not v for v in opts_hi.values()):
         return None
     if len(set(v.lower() for v in opts_en.values())) < 4:
@@ -119,7 +124,8 @@ def validate_question_strict(q: dict) -> dict | None:
 
     exp_en = str(q.get("explanationEn") or "").strip()
     exp_hi = str(q.get("explanationHi") or "").strip()
-    if len(exp_en) < 100 or len(exp_hi) < 90:
+    if len(exp_en) < 60 or len(exp_hi) < 50:
+        print(f"[L3-DROP] short exp en={len(exp_en)} hi={len(exp_hi)}")
         return None
 
     # Catch answer-key mismatch if explanation explicitly names a different option letter
@@ -269,9 +275,10 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
             break
         cur_avoid = avoid_topics + [x["questionEn"] for x in verified]
         prompt1 = build_layer1_prompt(date_str, spec, need, cur_avoid)
-        raw1, src1 = _call_gemini_raw(prompt1, temperature=0.2)
+        temp1 = min(0.7, 0.2 + 0.12 * (attempt - 1))
+        raw1, src1 = _call_gemini_raw(prompt1, temperature=temp1)
         if not raw1:
-            raw1, src1 = _call_groq_raw(prompt1, temperature=0.2)
+            raw1, src1 = _call_groq_raw(prompt1, temperature=temp1)
         qlist1 = raw1 if isinstance(raw1, list) else (raw1.get("questions") if isinstance(raw1, dict) else None)
         if not isinstance(qlist1, list) or not qlist1:
             print(f"[{batch_name} attempt {attempt}] Layer-1 empty, retrying...")
@@ -281,7 +288,7 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
         print(f"[{batch_name} attempt {attempt} LAYER-1 OK] {src1} -> {len(draft_qs)} draft Qs")
 
         audited = []
-        for ci in range(0, len(draft_qs), 3):
+        for ci in range(0, len(draft_qs), 2):
             chunk = draft_qs[ci:ci+3]
             audit_prompt = build_layer2_audit_prompt(chunk)
             if src1 and src1.startswith("gemini:") and GROQ_KEY:
