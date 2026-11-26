@@ -65,6 +65,31 @@ def _clean_json_text(raw: str):
             return None
 
 
+
+STOPWORDS_60D = {
+    "which","following","statements","statement","consider","correct","incorrect","above","given",
+    "with","from","that","this","about","regarding","between","among","under","into","india",
+    "indian","their","have","been","were","only","both","neither","none","what","when","where",
+    "match","list","pairs","correctly","matched","assertion","reason","arrange","chronological",
+    "order","context","reference","respect","true","false","choose","code","below"
+}
+
+def _q_tokens(text: str) -> set:
+    words = re.findall(r"[a-zA-Z0-9]{4,}", (text or "").lower())
+    return {w for w in words  if w not in STOPWORDS_60D}
+
+def is_similar_to_past(q_text: str, past_sets: list) -> bool:
+    cur = _q_tokens(q_text)
+    if len(cur) < 3:
+        return False
+    for ps in past_sets:
+        if len(ps) < 3:
+            continue
+        inter = len(cur & ps)
+        if inter >= 3 and (inter / min(len(cur), len(ps))) >= 0.55:
+            return True
+    return False
+
 def validate_question_strict(q: dict) -> dict | None:
     """Layer 3: Programmatic consistency, answer-key alignment, depth, and script gate."""
     if not isinstance(q, dict):
@@ -185,7 +210,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
 
 
 def build_layer1_prompt(date_str: str, spec: str, count: int, avoid_topics: list) -> str:
-    avoid_block = "\n".join(f"- {t[:90]}" for t in avoid_topics[:40]) if avoid_topics else "None"
+    avoid_block = "\n".join(f"- {t[:90]}" for t in avoid_topics[:80]) if avoid_topics else "None"
     return f"""You are a Senior UPSC CSE, UPPSC PCS, and BPSC Prelims Paper Setter for ETERNAL CIVIL ACADEMY.
 Generate EXACTLY {count} ADVANCED, 100% FACTUALLY VERIFIED bilingual MCQs for {date_str}.
 
@@ -237,6 +262,7 @@ Return ONLY valid JSON with key "questions" containing the FULLY VERIFIED & CORR
 def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: list, batch_name: str) -> list:
     verified = []
     seen_prefix = set()
+    past_token_sets = [_q_tokens(t) for t in avoid_topics if t]
     for attempt in range(1, 4):
         need = count - len(verified)
         if need <= 0:
@@ -271,7 +297,11 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
         for q in audited:
             vq = validate_question_strict(q)
             if vq and vq["questionEn"][:45] not in seen_prefix:
+                if is_similar_to_past(vq["questionEn"], past_token_sets):
+                    print(f"[BLOCKED 60-DAY REPEAT] {vq['qestionEn'][:65]}")
+                    continue
                 seen_prefix.add(vq["questionEn"][:45])
+                past_token_sets.append(_q_tokens(vq["questionEn"]))
                 verified.append(vq)
                 if len(verified) >= count:
                     break
@@ -464,7 +494,7 @@ def main():
 
     # Collect recent questions from previous days (excluding today on manual re-run) to avoid repeats
     avoid_topics = []
-    for old in existing_tests[:6]:
+    for old in existing_tests[:60]:
         if not isinstance(old, dict) or old.get("date") == today_ist:
             continue
         try:
