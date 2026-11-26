@@ -302,7 +302,15 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
             qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
             part = qlist2 if isinstance(qlist2, list) else chunk
             print(f"[{batch_name} attempt {attempt} LAYER-2 AUDIT] {src2 or 'fallback'} -> {len(part)}/{len(chunk)} Qs")
-            audited.extend(part)
+            for idx_c, orig_q in enumerate(chunk):
+                aud_q = part[idx_c] if (idx_c < len(part) and isinstance(part[idx_c], dict)) else {}
+                merged_q = dict(orig_q)
+                for k, v in aud_q.items():
+                    if v is not None and v != "" and v != {} and v != []:
+                        merged_q[k] = v
+                if not validate_question_strict(merged_q) and validate_question_strict(orig_q):
+                    merged_q = orig_q
+                audited.append(merged_q)
 
         # Layer 3: Strict programmatic validation + 60-day repeat guard
         for q in audited:
