@@ -178,7 +178,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                     "model": model,
                     "temperature": temperature,
                     "max_tokens": 5500,
-                    "response_format": {"type": "json_object"},
+                    
                     "messages": [{"role": "user", "content": prompt}],
                 },
                 timeout=90,
@@ -194,7 +194,7 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
                 r2 = requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
-                    json={"model": model, "temperature": temperature, "max_tokens": 5500, "response_format": {"type": "json_object"}, "messages": [{"role": "user", "content": prompt}]},
+                    json={"model": model, "temperature": temperature, "max_tokens": 5500,  "messages": [{"role": "user", "content": prompt}]},
                     timeout=90,
                 )
                 if r2.ok:
@@ -255,7 +255,7 @@ AUDIT CHECKLIST FOR EACH QUESTION:
 DRAFT QUESTIONS TO AUDIT:
 {payload_str}
 
-Return ONLY valid JSON with key "questions" containing the FULLY VERIFIED & CORRECTED array of questions (same schema: subject, questionEn, questionHi, optionsEn, optionsHi, correct, explanationEn, explanationHi).
+CRITICAL: Return ALL {len(draft_qs)} questions (NEVER omit any question; fix any factual or key error in place). Return ONLY valid JSON with key "questions" containing all {len(draft_qs)} FULLY VERIFIED & CORRECTED questions (same schema: subject, questionEn, questionHi, optionsEn, optionsHi, correct, explanationEn, explanationHi).
 """
 
 
@@ -263,7 +263,7 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
     verified = []
     seen_prefix = set()
     past_token_sets = [_q_tokens(t) for t in avoid_topics if t]
-    for attempt in range(1, 4):
+    for attempt in range(1, 6):
         need = count - len(verified)
         if need <= 0:
             break
@@ -280,19 +280,22 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
         draft_qs = [q for q in qlist1 if isinstance(q, dict)][:need]
         print(f"[{batch_name} attempt {attempt} LAYER-1 OK] {src1} -> {len(draft_qs)} draft Qs")
 
-        audit_prompt = build_layer2_audit_prompt(draft_qs)
-        if src1 and src1.startswith("gemini:") and GROQ_KEY:
-            raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
-            if not raw2:
-                raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
-        else:
-            raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
-            if not raw2:
+        audited = []
+        for ci in range(0, len(draft_qs), 3):
+            chunk = draft_qs[ci:ci+3]
+            audit_prompt = build_layer2_audit_prompt(chunk)
+            if src1 and src1.startswith("gemini:") and GROQ_KEY:
                 raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
-
-        qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
-        audited = qlist2 if isinstance(qlist2, list) else draft_qs
-        print(f"[{batch_name} attempt {attempt} LAYER-2 AUDIT] {src2 or 'fallback'} -> {len(audited)} Qs")
+                if not raw2:
+                    raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+            else:
+                raw2, src2 = _call_gemini_raw(audit_prompt, temperature=0.1)
+                if not raw2:
+                    raw2, src2 = _call_groq_raw(audit_prompt, temperature=0.1)
+            qlist2 = raw2 if isinstance(raw2, list) else (raw2.get("questions") if isinstance(raw2, dict) else None)
+            part = qlist2 if isinstance(qlist2, list) else chunk
+            print(f"[{batch_name} attempt {attempt} LAYER-2 AUDIT] {src2 or 'fallback'} -> {len(part)}/{len(chunk)} Qs")
+            audited.extend(part)
 
         for q in audited:
             vq = validate_question_strict(q)
