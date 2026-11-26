@@ -308,7 +308,7 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
             vq = validate_question_strict(q)
             if vq and vq["questionEn"][:45] not in seen_prefix:
                 if is_similar_to_past(vq["questionEn"], past_token_sets):
-                    print(f"[BLOCKED 60-DAY REPEAT] {vq['qestionEn'][:65]}")
+                    print(f"[BLOCKED 60-DAY REPEAT] {vq['questionEn'][:65]}")
                     continue
                 seen_prefix.add(vq["questionEn"][:45])
                 past_token_sets.append(_q_tokens(vq["questionEn"]))
