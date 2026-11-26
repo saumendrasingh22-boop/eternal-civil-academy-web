@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 import DailyNcertSeriesFeed from "@/components/DailyNcertSeriesFeed";
 
@@ -63,21 +63,21 @@ export default function TestSeriesPage() {
   const paidSeriesList = [
     {
       id: "ts-upsc-2027",
-      title: "UPSC CSE Prelims 2027 â€” Full Length Test Series (30 Tests)",
+      title: "UPSC CSE Prelims 2027 — Full Length Test Series (30 Tests)",
       exam: "UPSC",
       price: 499,
       testsCount: "30 CBT Tests + Solutions (English & Hindi)",
     },
     {
       id: "ts-uppsc-2026",
-      title: "UPPSC PCS Prelims 2026 â€” GS + CSAT Test Series (25 Tests)",
+      title: "UPPSC PCS Prelims 2026 — GS + CSAT Test Series (25 Tests)",
       exam: "UPPSC",
       price: 399,
       testsCount: "25 CBT Tests + UP Special (English & Hindi)",
     },
     {
       id: "ts-bpsc-71",
-      title: "71st BPSC Prelims â€” Complete Test Series (20 Tests)",
+      title: "71st BPSC Prelims — Complete Test Series (20 Tests)",
       exam: "BPSC",
       price: 349,
       testsCount: "20 CBT Tests + Bihar Special (English & Hindi)",
@@ -110,7 +110,7 @@ export default function TestSeriesPage() {
                 lang === "hi" ? "bg-[#E60000] text-white" : "text-slate-700"
               }`}
             >
-              à¤¹à¤¿à¤¨à¥à¤¦à¥€
+              हिन्दी
             </button>
           </div>
 
@@ -158,7 +158,7 @@ export default function TestSeriesPage() {
               href="/test-series/mistakes"
               className="bg-[#E60000] hover:bg-red-700 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition"
             >
-              See Mistakes â†’
+              See Mistakes →
             </Link>
           </div>
 
@@ -182,14 +182,14 @@ export default function TestSeriesPage() {
                       </span>
                     )}
                     <span className="text-slate-500 font-bold flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {test.durationMinutes} Mins â€¢ {test.questions.length} MCQs
+                      <Clock className="w-3.5 h-3.5" /> {test.durationMinutes} Mins • {test.questions.length} MCQs
                     </span>
                   </div>
                   <h2 className="text-base sm:text-lg font-extrabold text-[#0B1B3D]">
                     {test.title}
                   </h2>
                   <p className="text-xs text-slate-500 font-semibold mt-1">
-                    {test.examTag} â€¢ English & à¤¹à¤¿à¤¨à¥à¤¦à¥€ â€¢ Mistakes + Solution + Question Paper PDF
+                    {test.examTag} • English & हिन्दी • Mistakes + Solution + Question Paper PDF
                   </p>
                 </div>
 
@@ -198,7 +198,7 @@ export default function TestSeriesPage() {
                     href={`/test-series/live-cbt?quiz=${encodeURIComponent(test.id)}&lang=${lang}`}
                     className="bg-[#E60000] hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
                   >
-                    Start Live Test â†’
+                    Start Live Test →
                   </Link>
                   {test.source === "telegram_bot" ? (
                     <Link
@@ -230,7 +230,7 @@ export default function TestSeriesPage() {
                       {series.exam}
                     </span>
                     <span className="text-base font-extrabold text-[#E60000]">
-                      â‚¹{series.price}
+                      ₹{series.price}
                     </span>
                   </div>
                   <h2 className="text-base font-extrabold text-[#0B1B3D]">{series.title}</h2>
@@ -247,7 +247,7 @@ export default function TestSeriesPage() {
                         href={`/test-series/live-cbt?lang=${lang}`}
                         className="bg-[#0B1B3D] text-white text-xs font-bold px-4 py-2 rounded-xl"
                       >
-                        Open Tests â†’
+                        Open Tests →
                       </Link>
                     </div>
                   ) : (
