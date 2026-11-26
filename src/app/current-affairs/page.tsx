@@ -9,7 +9,7 @@ import DualPdfButton from "@/components/DualPdfButton";
 import { Star, Languages, FileText } from "lucide-react";
 
 export default function CurrentAffairsPage() {
-  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [lang, setLang] = useState<"en" | "hi">("hi");
   const [gsFilter, setGsFilter] = useState("ALL");
   const [customCaPdfs, setCustomCaPdfs] = useState<Array<{ id: string; section: string; title: string; priceInr: number; englishPdfUrl: string; hindiPdfUrl: string; createdAt: string }>>([]);
   useEffect(() => { const loadCustomPdfs = () => { try { const raw = window.localStorage.getItem("eca_custom_content_v1"); const parsed = raw ? JSON.parse(raw) : []; if (Array.isArray(parsed)) setCustomCaPdfs(parsed.filter((x: any) => (x.section || "").toLowerCase().includes("current affairs"))); } catch {} }; loadCustomPdfs(); window.addEventListener("eca-custom-content-updated", loadCustomPdfs); return () => window.removeEventListener("eca-custom-content-updated", loadCustomPdfs); }, []);

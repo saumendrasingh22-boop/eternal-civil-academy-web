@@ -31,7 +31,7 @@ export default function CurrentAffairReader({
 }: {
   article: BilingualCurrentAffairItem;
 }) {
-  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [lang, setLang] = useState<"en" | "hi">("hi");
   useEffect(() => {
     try { const sl = new URLSearchParams(window.location.search).get("lang") || window.localStorage.getItem("eca_ca_lang"); if (sl === "hi" || sl === "en") setLang(sl); } catch {}
   }, []);

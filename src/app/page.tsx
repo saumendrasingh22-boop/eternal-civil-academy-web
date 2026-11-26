@@ -37,6 +37,7 @@ import ExamCountdownBar from "@/components/ExamCountdownBar";
 
 export default function HomePage() {
   const [liveCa, setLiveCa] = useState<any[]>([]);
+  const [caLang, setCaLang] = useState<"en" | "hi">("hi");
   useEffect(() => {
     fetch("/api/current-affairs?_t=" + Date.now(), { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -358,14 +359,14 @@ export default function HomePage() {
                         </span>
                         <span className="text-slate-400 font-semibold">{ca.date}</span>
                       </div>
-                      <Link href={`/current-affairs/${ca.slug}`}>
+                      <Link href={`/current-affairs/${ca.slug}?lang=${caLang}`}>
                         <h3 className="text-sm font-bold text-[#0B1B3D] hover:text-[#E60000] leading-snug">
-                          {ca.title}
+                          {caLang === "hi" ? (ca.titleHi || ca.title_hi || ca.title) : ca.title}
                         </h3>
                       </Link>
                       <div className="mt-2.5 flex items-center justify-between">
                         <Link
-                          href={`/current-affairs/${ca.slug}`}
+                          href={`/current-affairs/${ca.slug}?lang=${caLang}`}
                           className="text-xs font-bold text-[#0B1B3D] hover:text-[#E60000]"
                         >
                           Read Article →

@@ -90,7 +90,7 @@ export default function HomeCaQuizCard() {
   const [questions, setQuestions] = useState<DailyQuestion[]>([]);
   const [loadingQ, setLoadingQ] = useState(false);
 
-  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [lang, setLang] = useState<"en" | "hi">("hi");
   const [isExpanded, setIsExpanded] = useState(false);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
