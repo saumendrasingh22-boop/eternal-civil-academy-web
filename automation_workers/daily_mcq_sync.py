@@ -17,6 +17,7 @@ WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com"
 RELEASE_TAG = "PDFs"
 
 GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
+EXHAUSTED_GROQ = set()
 GROQ_MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
 FORBIDDEN_SCRIPT_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 HEADERS = {"User-Agent": "Mozilla/5.0 (ECA-Daily-NCERT-3Layer-Bot)"}
@@ -195,6 +196,8 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
     if not GROQ_KEY:
         return None, None
     for model in GROQ_MODELS:
+        if model in EXHAUSTED_GROQ:
+            continue
         try:
             hdr = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
             payload = {
@@ -205,9 +208,9 @@ def _call_groq_raw(prompt: str, temperature: float = 0.2):
             }
             r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=hdr, json=payload, timeout=90)
             if r.status_code == 429:
-                print(f"[groq 429 {model}] TPM limit — waiting 20s and retrying once...")
-                time.sleep(20)
-                r = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=hdr, json=payload, timeout=90)
+                print(f"[groq 429 {model}] rate-limited — skipping for rest of run")
+                EXHAUSTED_GROQ.add(model)
+                continue
             if r.ok:
                 txt = r.json()["choices"][0]["message"]["content"]
                 parsed = _clean_json_text(txt)
@@ -317,7 +320,7 @@ def generate_verified_batch(date_str: str, spec: str, count: int, avoid_topics: 
             vq = validate_question_strict(q)
             if not vq:
                 continue
-            pref = vq["questionEn"][:45]
+            pref = vq["questionEn"][:140]
             if pref in seen_prefix:
                 continue
             if is_similar_to_past(vq["questionEn"], past_token_sets):
