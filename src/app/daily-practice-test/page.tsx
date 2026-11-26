@@ -103,7 +103,10 @@ export default function DailyPracticeTestPage() {
           } catch {}
         });
         setSavedScores(scores);
-        if (sorted.length > 0) setSelectedMeta(sorted[0]);
+        const reqDate = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("date") : null;
+        const match = reqDate ? sorted.find((x) => x.date === reqDate) : null;
+        if (match) setSelectedMeta(match);
+        else if (sorted.length > 0) setSelectedMeta(sorted[0]);
       })
       .catch(() => {})
       .finally(() => {
