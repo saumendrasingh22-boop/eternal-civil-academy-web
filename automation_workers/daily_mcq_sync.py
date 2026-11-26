@@ -194,49 +194,29 @@ STRICT RULES:
 """
 
 
-def _extract_website_pdf_brand():
-    """Reads exact logo, SVGs, and branding CSS directly from src/lib/articlePdfExport.ts."""
-    import base64 as _b64
-
-    ts_path = "src/lib/articlePdfExport.ts"
-    ts = open(ts_path, "r", encoding="utf-8").read() if os.path.exists(ts_path) else ""
-
-    def grab_const(name, default=""):
-        m = re.search(rf'const\s+{name}\s*=\s*([`"\'])([\s\S]*?)\1\s*;', ts)
-        return m.group(2) if m else default
-
-    web_svg = grab_const("WEB_SVG", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B1B3D" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>')
-    tg_svg = grab_const("TG_SVG", '<svg width="13" height="13" viewBox="0 0 24 24" fill="#229ED9"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>')
-    ig_svg = grab_const("IG_SVG", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>')
-    base_css = grab_const("css", "")
-
-    # Find exact logo file referenced in articlePdfExport.ts
-    logo_candidates = []
-    for lm in re.findall(r'["\'`](/[^"\'`\s]+\.(?:png|jpg|jpeg|webp|svg))["\'`]', ts):
-        logo_candidates.append("public" + lm.split("?")[0])
-    logo_candidates.extend(["public/logo.png", "public/eca-logo.png", "public/eca-banner.png", "public/icon-192.png"])
-
-    logo_src = "https://www.eternalcivilacademy.com/logo.png"
-    for cand in logo_candidates:
-        if os.path.exists(cand):
-            ext = os.path.splitext(cand)[1].lower().lstrip(".")
-            mime = "image/svg+xml" if ext == "svg" else ("image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}")
-            with open(cand, "rb") as lf:
-                logo_src = f"data:{mime};base64," + _b64.b64encode(lf.read()).decode("ascii")
-            print(f"[PDF BRAND] Loaded exact website logo: {cand}")
-            break
-
-    return logo_src, base_css, web_svg, tg_svg, ig_svg
-
-
 def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str):
+    import base64 as _b64
     from weasyprint import HTML
 
-    logo_src, base_css, web_svg, tg_svg, ig_svg = _extract_website_pdf_brand()
     is_hi = lang == "hi"
     tag_lbl = "दैनिक NCERT क्विज़ (20 MCQs)" if is_hi else "Daily NCERT Quiz (20 MCQs)"
     title = f"दैनिक NCERT क्विज़ (20 MCQs) — {date_str}" if is_hi else f"Daily NCERT Quiz (20 MCQs) — {date_str}"
     sub = "Class 6-12 NCERT • +1 सही / -1/3 नेगेटिव मार्किंग • व्याख्या सहित" if is_hi else "Class 6-12 NCERT • +1 Correct / -1/3 Negative Marking • With Explanations"
+
+    logo_src = "https://www.eternalcivilacademy.com/logo.jpg"
+    for cand in ("public/logo.jpg", "public/logo.png", "public/icon-192.png"):
+        if os.path.exists(cand):
+            ext = os.path.splitext(cand)[1].lower().lstrip(".")
+            mime = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
+            with open(cand, "rb") as lf:
+                raw_logo = lf.read()
+            logo_src = f"data:{mime};base64," + _b64.b64encode(raw_logo).decode("ascii")
+            print(f"[PDF BRAND] Embedded {cand} ({len(raw_logo)} bytes)")
+            break
+
+    web_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B1B3D" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+    tg_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="#229ED9" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.98-1.73 6.64-2.87 7.97-3.43 3.79-1.58 4.58-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>'
+    ig_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" style="vertical-align:middle;margin-right:4px"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
 
     q_blocks = []
     for q in questions:
@@ -248,20 +228,142 @@ def render_branded_pdf(questions: list, date_str: str, lang: str, out_path: str)
         opt_html = "".join(f'<div class="qopt"><b>({k})</b> {html.escape(opts.get(k, ""))}</div>' for k in ("A", "B", "C", "D"))
         q_blocks.append(f'<div class="qcard"><div class="qmeta">Q{q["id"]} &bull; {html.escape(q["subject"])}</div><div class="qtxt">{qtxt}</div><div class="qopts">{opt_html}</div><div class="qans"><b>{ans_lbl}: ({q["correct"]})</b> &mdash; <b>{exp_lbl}:</b> {exp}</div></div>')
 
-    quiz_css = """
-body{font-family:'Noto Sans Devanagari','Lohit Devanagari','DejaVu Sans',sans-serif !important;}
-.wm{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-32deg);font-size:34px;font-weight:800;color:#0B1B3D;opacity:0.07;white-space:nowrap;z-index:0;letter-spacing:1.5px;}
-.qcard,.mt,.hdr,.ft{position:relative;z-index:1;}
-.qcard{border:1px solid #cbd5e1;border-radius:8px;padding:9px 12px;margin-bottom:10px;background:rgba(255,255,255,0.92);page-break-inside:avoid;}
-.qmeta{display:inline-block;background:#eef2ff;color:#3730a3;font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:5px;margin-bottom:5px;}
-.qtxt{font-size:11.5px;font-weight:700;color:#0f172a;line-height:1.45;margin-bottom:6px;}
-.qopts{margin-left:6px;margin-bottom:6px;}
-.qopt{font-size:10.8px;color:#1e293b;margin-bottom:2.5px;line-height:1.4;}
-.qans{background:#fffbeb;border:1px solid #fde68a;border-left:3.5px solid #E60000;border-radius:6px;padding:6px 9px;font-size:10px;color:#1e293b;line-height:1.42;}
-.ft-links span{display:inline-flex;align-items:center;gap:4px;}
+    css = """
+@page {
+  size: A4;
+  margin: 14mm 15mm 16mm 15mm;
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 8pt;
+    color: #475569;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans Devanagari', 'Lohit Devanagari', 'DejaVu Sans', sans-serif;
+  color: #0f172a;
+  margin: 0;
+  padding: 0;
+  font-size: 10pt;
+  line-height: 1.45;
+}
+.wm {
+  position: fixed;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-32deg);
+  font-size: 32pt;
+  font-weight: 800;
+  color: #0B1B3D;
+  opacity: 0.08;
+  white-space: nowrap;
+  z-index: 0;
+  letter-spacing: 1.5px;
+}
+.hdr, .mt, h1, .wy, .qcard, .ft { position: relative; z-index: 1; }
+.hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2.5px solid #0B1B3D;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+.hl { display: flex; align-items: center; gap: 10px; }
+.lg { height: 44px; width: auto; max-width: 140px; object-fit: contain; border-radius: 6px; }
+.br { font-size: 14pt; font-weight: 800; color: #0B1B3D; letter-spacing: 0.4px; line-height: 1.15; }
+.tg { font-size: 8.5pt; color: #E60000; font-weight: 700; margin-top: 2px; }
+.hr { text-align: right; }
+.hr-tag {
+  display: inline-block;
+  background: #fef2f2;
+  color: #E60000;
+  font-size: 8.5pt;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 99px;
+  border: 1px solid #fecaca;
+}
+.hr-web {
+  display: block;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #0B1B3D;
+  text-decoration: none;
+  margin-top: 4px;
+}
+.mt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0 8px 0;
+  font-size: 8.5pt;
+}
+.bd { background: #E60000; color: #ffffff; font-weight: 800; padding: 3px 9px; border-radius: 5px; }
+.sb { background: #eef2ff; color: #3730a3; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+h1 { font-size: 14pt; color: #0B1B3D; margin: 6px 0 10px 0; line-height: 1.3; }
+.wy {
+  background: #f8fafc;
+  border-left: 4px solid #E60000;
+  padding: 9px 13px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 12px;
+  font-size: 9pt;
+}
+.st { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #E60000; margin-bottom: 3px; }
+.qcard {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  page-break-inside: avoid;
+}
+.qmeta {
+  display: inline-block;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 8pt;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+.qtxt { font-size: 10pt; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 5px; }
+.qopts { margin-left: 6px; margin-bottom: 6px; }
+.qopt { font-size: 9.4pt; color: #1e293b; margin-bottom: 2px; line-height: 1.4; }
+.qans {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 3.5px solid #E60000;
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 8.8pt;
+  color: #1e293b;
+  line-height: 1.42;
+}
+.ft {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 2px solid #0B1B3D;
+  font-size: 8.5pt;
+  color: #334155;
+  page-break-inside: avoid;
+}
+.ft-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.ft a { color: #0B1B3D; font-weight: 700; text-decoration: none; }
+.ft-copy { font-size: 8pt; color: #475569; text-align: center; font-weight: 600; }
 """
 
-    doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>{base_css}\n{quiz_css}</style></head><body>
+    doc_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/><style>{css}</style></head><body>
 <div class="wm">www.eternalcivilacademy.com</div>
 <div class="hdr"><div class="hl"><img src="{logo_src}" class="lg"/><div><div class="br">ETERNAL CIVIL ACADEMY</div><div class="tg">Your Success, Our Commitment</div></div></div><div class="hr"><span class="hr-tag">{html.escape(tag_lbl)}</span><a href="https://www.eternalcivilacademy.com" class="hr-web">www.eternalcivilacademy.com</a></div></div>
 <div class="mt"><span class="bd">Class 6-12 NCERT</span><span class="sb">+1 / -1/3 Negative Marking</span><b>{html.escape(date_str)}</b></div>
