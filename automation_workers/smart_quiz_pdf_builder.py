@@ -558,9 +558,9 @@ def build_pdf_html(quiz: dict, lang: str, include_solutions: bool) -> str:
     border-radius: 4px;
     background: #FFFFFF;
   }}
-  .br {{ font-size: 13pt; font-weight: 900; letter-spacing: 0.4px; line-height: 1.1; }}
-  .tg {{ font-size: 7.5pt; color: #FDE68A; font-style: italic; margin-top: 2px; }}
-  .hr {{ text-align: right; }}
+  .br {{ font-size: 12pt; font-weight: 900; letter-spacing: 0.3px; line-height: 1.1; white-space: nowrap; }}
+  .tg {{ font-size: 7.3pt; color: #FDE68A; font-style: italic; margin-top: 2px; white-space: nowrap; }}
+  .hr {{ text-align: right; white-space: nowrap; flex-shrink: 0; }}
   .hr-tag {{
     display: inline-block;
     background: #E60000;
@@ -771,7 +771,7 @@ def main():
             continue
 
         needs_tr = quiz_needs_translation(q)
-        needs_pdf = bool(TARGET_SLUG) or needs_tr or quiz_needs_pdfs(q)
+        needs_pdf = True if (os.getenv("GITHUB_EVENT_NAME") == "push" or TARGET_SLUG) else (needs_tr or quiz_needs_pdfs(q))
         if not needs_tr and not needs_pdf:
             continue
 
