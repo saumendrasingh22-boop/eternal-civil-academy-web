@@ -545,7 +545,7 @@ def build_pdf_html(quiz: dict, lang: str, include_solutions: bool) -> str:
     color: #FFFFFF;
     border-bottom: 3px solid #E60000;
     border-radius: 6px;
-    padding: 7px 12px;
+    padding: 6px 10px; font-family: "Noto Sans", "DejaVu Sans", sans-serif;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -558,7 +558,7 @@ def build_pdf_html(quiz: dict, lang: str, include_solutions: bool) -> str:
     border-radius: 4px;
     background: #FFFFFF;
   }}
-  .br {{ font-size: 12pt; font-weight: 900; letter-spacing: 0.3px; line-height: 1.1; white-space: nowrap; }}
+  .br {{ font-size: 11.5pt; font-weight: 900; letter-spacing: 0.2px; line-height: 1.1; white-space: nowrap; }}
   .tg {{ font-size: 7.3pt; color: #FDE68A; font-style: italic; margin-top: 2px; white-space: nowrap; }}
   .hr {{ text-align: right; white-space: nowrap; flex-shrink: 0; }}
   .hr-tag {{
