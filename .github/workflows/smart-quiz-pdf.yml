@@ -1,12 +1,19 @@
-name: Smart Quiz Branded PDF Builder
+name: Smart Quiz Bilingual Translator & Branded PDF Builder
 
 on:
   workflow_dispatch:
     inputs:
       quiz_slug:
-        description: "Specific quiz slug (leave empty to build any missing PDFs)"
+        description: "Specific quiz slug (leave empty to auto-fix any quiz missing EN/HI translation or PDFs)"
         required: false
         default: ""
+  push:
+    branches: [main]
+    paths:
+      - "automation_workers/smart_quiz_pdf_builder.py"
+      - ".github/workflows/smart-quiz-pdf.yml"
+  schedule:
+    - cron: "7,22,37,52 * * * *"
 
 concurrency:
   group: smart-quiz-pdf-builder
@@ -18,7 +25,7 @@ permissions:
 jobs:
   build-pdfs:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -29,20 +36,40 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Quick 2s Check for Pending Translation or PDFs
+        id: check
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          QUIZ_SLUG: ${{ github.event.inputs.quiz_slug }}
+        run: |
+          OUT=$(python automation_workers/smart_quiz_pdf_builder.py --check-only)
+          echo "$OUT"
+          if echo "$OUT" | grep -q "NEEDS_WORK=true"; then
+            echo "needs_work=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_work=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install WeasyPrint & Noto Devanagari Fonts
+        if: steps.check.outputs.needs_work == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0 fonts-noto-core fonts-noto-extra
 
       - name: Install Python packages
+        if: steps.check.outputs.needs_work == 'true'
         run: |
           pip install --upgrade pip
           pip install requests weasyprint
 
-      - name: Build & Upload 4 Branded Direct-Download PDFs
+      - name: Auto-Translate (EN/HI) & Build 4 Branded Direct-Download PDFs
+        if: steps.check.outputs.needs_work == 'true'
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           QUIZ_SLUG: ${{ github.event.inputs.quiz_slug }}
         run: python automation_workers/smart_quiz_pdf_builder.py
