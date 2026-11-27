@@ -21,6 +21,29 @@ import {
   FileText,
 } from "lucide-react";
 
+
+function formatExamStem(text: string): string {
+  let s = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (/={5,}|-{5,}/.test(s)) {
+    const m = s.match(/(?:^|\s)Q\s*\.?\s*1\s*[\.\):\-]\s*([\s\S]+)$/);
+    if (m && m[1].trim().length > 15) s = m[1].trim();
+    else s = s.replace(/^[=\-_]{4,}[\s\S]*?[=\-_]{4,}\s*/, "").replace(/^Q\s*\.?\s*\d+\s*[\.\):\-]\s*/, "").trim();
+  }
+  s = s.replace(/([:।\.?!])\s+(?=(?:[1-6]\.|[1-6]\)|\([ivxIVX]+\))\s+)/g, "$1\n");
+  s = s.replace(/([:।\.?!\w\u0900-\u097F])\s+(?=\([a-d]\)\s+)/g, "$1\n");
+  s = s.replace(/\s+(?=(?:Assertion\s*\(A\)|Reason\s*\(R\)|कथन\s*\(A\)|कारण\s*\(R\)|List[\-\s]*I{1,2}\s*:?|सूची[\-\s]*I{1,2}\s*:?|Codes\s*:|कूट\s*:))/g, "\n");
+  s = s.replace(/([।\.?!])\s+(?=(?:उपर्युक्त|उपरोक्त|ऊपर दिए गए|नीचे दिए गए|सही उत्तर|Which of the|Select the correct|How many of the|Choose the correct))/g, "$1\n");
+  return s.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function formatExamExplanation(text: string): string {
+  let s = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!s) return "";
+  s = s.replace(/\s*[•▪]\s*/g, "\n• ").trim();
+  s = s.replace(/([।\.?!\]])\s+(?=(?:\[मुख्य तथ्य|\[Key Fact|Statement\s+[1-5]|कथन\s+[1-5]|Option\s+[A-D]|विकल्प\s+[A-D]|निष्कर्ष:|Note:|नोट:))/g, "$1\n");
+  return s.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export default function LiveCbtSimulatorPage() {
   const [testTitle, setTestTitle] = useState("Daily GS & Current Affairs Live Mock Test");
   const [questions, setQuestions] = useState<BilingualCbtQuestion[]>(CBT_QUESTIONS);

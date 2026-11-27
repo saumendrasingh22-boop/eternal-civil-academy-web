@@ -51,8 +51,7 @@ def has_devanagari(text: str) -> bool:
 
 
 def clean_question_stem(text: str) -> str:
-    s = str(text or "").strip()
-    # Strip any accidental file header banners separated by ===== or ----- before Q1.
+    s = str(text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
     if re.search(r"={5,}|-{5,}", s):
         m = re.search(r"(?:^|\s)Q\s*\.?\s*1\s*[\.\):\-]\s*(.+)$", s, flags=re.S)
         if m and len(m.group(1).strip()) > 15:
@@ -60,7 +59,20 @@ def clean_question_stem(text: str) -> str:
         else:
             s = re.sub(r"^[=\-_]{4,}[\s\S]*?[=\-_]{4,}\s*", "", s).strip()
             s = re.sub(r"^Q\s*\.?\s*\d+\s*[\.\):\-]\s*", "", s).strip()
-    return s
+    s = re.sub(r"(?<=[:।\.?!])\s+(?=(?:[1-6]\.|[1-6]\)|\([ivxIVX]+\))\s+)", "\n", s)
+    s = re.sub(r"(?<=[:।\.?!\w\u0900-\u097F])\s+(?=\([a-d]\)\s+)", "\n", s)
+    s = re.sub(
+        r"\s+(?=(?:Assertion\s*\(A\)|Reason\s*\(R\)|कथन\s*\(A\)|कारण\s*\(R\)|List[\-\s]*I{1,2}\s*:?|सूची[\-\s]*I{1,2}\s*:?|Codes\s*:|कूट\s*:))",
+        "\n",
+        s,
+    )
+    s = re.sub(
+        r"(?<=[।\.?!])\s+(?=(?:उपर्युक्त|उपरोक्त|ऊपर दिए गए|नीचे दिए गए|सही उत्तर|Which of the|Select the correct|How many of the|Choose the correct))",
+        "\n",
+        s,
+    )
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    return s.strip()
 
 
 def question_needs_en(q: dict) -> bool:
@@ -446,13 +458,19 @@ def _fmt_lines(text: str) -> str:
 
 
 def _fmt_explanation(text: str) -> str:
-    raw = str(text or "").strip()
+    raw = str(text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
     if not raw:
         return ""
+    raw = re.sub(r"\s*[•▪]\s*", "\n", raw).strip()
+    raw = re.sub(
+        r"(?<=[।\.?!\]])\s+(?=(?:\[मुख्य तथ्य|\[Key Fact|Statement\s+[1-5]|कथन\s+[1-5]|Option\s+[A-D]|विकल्प\s+[A-D]|निष्कर्ष:|Note:|नोट:))",
+        "\n",
+        raw,
+    )
     lines = [ln.strip() for ln in raw.split("\n") if ln.strip()]
     paras = []
     for ln in lines:
-        ln = re.sub(r"^[•\-\*]\s*", "", ln)
+        ln = re.sub(r"^[•▪\-\*]\s*", "", ln)
         esc = html.escape(ln)
         esc = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", esc)
         paras.append(f"<p>{esc}</p>")
