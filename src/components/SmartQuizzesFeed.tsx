@@ -75,6 +75,15 @@ export default function SmartQuizzesFeed({
   pricingFilter?: "free" | "paid";
 }) {
   const [quizzes, setQuizzes] = useState<SmartQuizItem[]>([]);
+  const [submittedSlugs, setSubmittedSlugs] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("eca_submitted_tests_v1");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setSubmittedSlugs(parsed.map(String));
+    } catch {}
+  }, []);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const isHi = lang === "hi";
 
@@ -193,7 +202,7 @@ export default function SmartQuizzesFeed({
                   </div>
                 )}
 
-                {!isUpcoming && (
+                {!isUpcoming && (submittedSlugs.includes(q.slug) || submittedSlugs.includes(q.id) ? (
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -224,7 +233,14 @@ export default function SmartQuizzesFeed({
                       <FileText className="w-3.5 h-3.5" /> व्याख्या PDF (हिन्दी)
                     </button>
                   </div>
-                )}
+                ) : (
+                  <Link
+                    href={`/test-series/live-cbt?smartQuiz=${encodeURIComponent(q.slug)}&lang=${lang}`}
+                    className="w-full inline-flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold px-3 py-2 rounded-xl transition text-center"
+                  >
+                    🔒 {isHi ? "PDF डाउनलोड करने के लिए पहले टेस्ट सबमिट करें" : "Submit Live Test to Unlock Question & Solution PDFs"}
+                  </Link>
+                ))}
               </div>
             </div>
           );

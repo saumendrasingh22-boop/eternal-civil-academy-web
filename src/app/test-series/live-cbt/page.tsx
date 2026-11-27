@@ -55,6 +55,20 @@ export default function LiveCbtSimulatorPage() {
   const [timeLeft, setTimeLeft] = useState(600);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (!submitted || typeof window === "undefined") return;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const keys = ["smartQuiz", "dailyTest", "dailyCa", "testId", "date", "id", "slug"]
+        .map((k) => (sp.get(k) || "").trim())
+        .filter(Boolean);
+      const raw = window.localStorage.getItem("eca_submitted_tests_v1");
+      const prev: string[] = raw ? JSON.parse(raw) : [];
+      const merged = Array.from(new Set([...(Array.isArray(prev) ? prev : []), ...keys]));
+      window.localStorage.setItem("eca_submitted_tests_v1", JSON.stringify(merged));
+    } catch {}
+  }, [submitted]);
+
   // Result Review Filter: all | mistakes | skipped | correct
   const [reviewFilter, setReviewFilter] = useState<"all" | "mistakes" | "skipped" | "correct">("all");
   const [pdfPickerType, setPdfPickerType] = useState<"mistakes" | "solution" | "question" | null>(null);

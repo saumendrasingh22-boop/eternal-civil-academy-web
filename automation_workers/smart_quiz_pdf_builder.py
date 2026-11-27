@@ -542,6 +542,8 @@ def build_pdf_html(quiz: dict, lang: str, include_solutions: bool) -> str:
     padding: 0;
     font-size: 9.6pt;
     line-height: 1.5;
+    orphans: 2;
+    widows: 2;
   }}
   .wm {{
     position: fixed;
@@ -632,7 +634,8 @@ def build_pdf_html(quiz: dict, lang: str, include_solutions: bool) -> str:
     border-radius: 10px;
     padding: 11px 13px;
     margin-bottom: 11px;
-    page-break-inside: avoid;
+    page-break-inside: auto;
+    break-inside: auto;
   }}
   .q-badge {{
     display: inline-block;
