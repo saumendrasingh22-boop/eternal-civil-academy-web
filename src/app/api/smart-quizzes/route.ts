@@ -60,7 +60,7 @@ async function saveAllQuizzes(items: SmartQuizItem[]): Promise<string | null> {
 async function callLlmJson(prompt: string): Promise<any | null> {
   const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
   if (geminiKey) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+    for (const model of ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-flash-latest"]) {
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,

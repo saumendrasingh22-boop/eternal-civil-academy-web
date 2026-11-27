@@ -265,14 +265,14 @@ def discover_gemini_models():
                 name = (m.get("name") or "").replace("models/", "")
                 methods = m.get("supportedGenerationMethods") or []
                 if "generateContent" in methods and "flash" in name and "tts" not in name and "image" not in name:
-                    models.append(name)
+                    if ("2.0" not in name and "2.5" not in name): models.append(name)
             models.sort(key=lambda x: (0 if "lite" in x else 1, x))
             ACTIVE_GEMINI_MODELS = models[:4]
             print(f"[gemini] Discovered models: {ACTIVE_GEMINI_MODELS}")
     except Exception as e:
         print(f"[gemini discover err] {e}")
     if not ACTIVE_GEMINI_MODELS:
-        ACTIVE_GEMINI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash"]
+        ACTIVE_GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-flash-latest"]
     return ACTIVE_GEMINI_MODELS
 
 

@@ -20,8 +20,8 @@ WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com"
 RELEASE_TAG = "PDFs"
 
 # Fast, reliable, schema-capable Gemini models first
-GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
-GROQ_MODELS = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
+GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-flash-latest"]
+GROQ_MODELS = ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "qwen/qwen3-32b", "llama-3.1-8b-instant"]
 EXHAUSTED_GROQ = set()
 EXHAUSTED_GEMINI = set()
 
