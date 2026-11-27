@@ -52,19 +52,19 @@ jobs:
           fi
 
       - name: Install WeasyPrint & Noto Devanagari Fonts
-        if: steps.check.outputs.needs_work == 'true'
+        if: github.event_name != 'schedule' || steps.check.outputs.needs_work == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0 fonts-noto-core fonts-noto-extra
 
       - name: Install Python packages
-        if: steps.check.outputs.needs_work == 'true'
+        if: github.event_name != 'schedule' || steps.check.outputs.needs_work == 'true'
         run: |
           pip install --upgrade pip
           pip install requests weasyprint
 
       - name: Auto-Translate (EN/HI) & Build 4 Branded Direct-Download PDFs
-        if: steps.check.outputs.needs_work == 'true'
+        if: github.event_name != 'schedule' || steps.check.outputs.needs_work == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

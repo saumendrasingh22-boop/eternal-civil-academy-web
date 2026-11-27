@@ -92,7 +92,7 @@ def fetch_quizzes_stdlib() -> list:
         headers={
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json",
+            "Content-Type": "application/json", "User-Agent": "ECA-Bot/1.0",
         },
     )
     with urllib.request.urlopen(req, timeout=25) as resp:
