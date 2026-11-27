@@ -259,6 +259,25 @@ Items: ${JSON.stringify(payload)}`;
       return NextResponse.json({ ok, triggered: ok });
     }
 
+    if (action === "sync_bilingual_pdfs") {
+      const slug = String(body?.slug || "").trim();
+      if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+      const existing = await loadAllQuizzes();
+      const idx = existing.findIndex((q) => q.slug === slug);
+      if (idx === -1) return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+      const cur = existing[idx];
+      existing[idx] = {
+        ...cur,
+        titleEn: typeof body?.titleEn === "string" && body.titleEn.trim() ? body.titleEn.trim() : cur.titleEn,
+        titleHi: typeof body?.titleHi === "string" && body.titleHi.trim() ? body.titleHi.trim() : cur.titleHi,
+        questions: Array.isArray(body?.questions) && body.questions.length ? body.questions : cur.questions,
+        pdfUrls: body?.pdfUrls && typeof body.pdfUrls === "object" ? body.pdfUrls : cur.pdfUrls,
+      };
+      const err = await saveAllQuizzes(existing);
+      if (err) return NextResponse.json({ error: err }, { status: 500 });
+      return NextResponse.json({ ok: true, slug });
+    }
+
     if (action === "delete") {
       const id = String(body?.id || "");
       const existing = await loadAllQuizzes();

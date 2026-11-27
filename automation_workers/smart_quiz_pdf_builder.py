@@ -6,15 +6,20 @@ import re
 import sys
 import time
 import urllib.request
-import urllib.error
 
+WEBSITE_URL = (os.getenv("WEBSITE_URL") or "https://www.eternalcivilacademy.com").strip().rstrip("/")
+BOT_API_SECRET = (os.getenv("BOT_API_SECRET") or "").strip()
 SUPABASE_URL = (os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL") or "").strip().rstrip("/")
 SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
 GH_TOKEN = (os.getenv("GITHUB_TOKEN") or "").strip()
 GH_REPO = (os.getenv("GITHUB_REPOSITORY") or "saumendrasingh22-boop/eternal-civil-academy-web").strip()
 TARGET_SLUG = (os.getenv("QUIZ_SLUG") or "").strip()
-GEMINI_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
-GROQ_KEY = (os.getenv("GROQ_API_KEY") or "").strip()
+
+GEMINI_KEYS = [k for k in [(os.getenv("QUIZ_GEMINI_API_KEY") or "").strip(), (os.getenv("GEMINI_API_KEY") or "").strip()] if k]
+GROQ_KEYS = [k for k in [(os.getenv("QUIZ_GROQ_API_KEY") or "").strip(), (os.getenv("GROQ_API_KEY") or "").strip()] if k]
+# Deduplicate preserving order
+GEMINI_KEYS = list(dict.fromkeys(GEMINI_KEYS))
+GROQ_KEYS = list(dict.fromkeys(GROQ_KEYS))
 
 RELEASE_TAG = "PDFs"
 STATE_KEY = "smart_quizzes_v1"
@@ -45,8 +50,21 @@ def has_devanagari(text: str) -> bool:
     return bool(DEVANAGARI_RE.search(str(text or "")))
 
 
+def clean_question_stem(text: str) -> str:
+    s = str(text or "").strip()
+    # Strip any accidental file header banners separated by ===== or ----- before Q1.
+    if re.search(r"={5,}|-{5,}", s):
+        m = re.search(r"(?:^|\s)Q\s*\.?\s*1\s*[\.\):\-]\s*(.+)$", s, flags=re.S)
+        if m and len(m.group(1).strip()) > 15:
+            s = m.group(1).strip()
+        else:
+            s = re.sub(r"^[=\-_]{4,}[\s\S]*?[=\-_]{4,}\s*", "", s).strip()
+            s = re.sub(r"^Q\s*\.?\s*\d+\s*[\.\):\-]\s*", "", s).strip()
+    return s
+
+
 def question_needs_en(q: dict) -> bool:
-    q_en = str(q.get("questionEn") or "").strip()
+    q_en = clean_question_stem(q.get("questionEn") or "")
     if not q_en or has_devanagari(q_en):
         return True
     opts_en = q.get("optionsEn") or {}
@@ -60,7 +78,7 @@ def question_needs_en(q: dict) -> bool:
 
 
 def question_needs_hi(q: dict) -> bool:
-    q_hi = str(q.get("questionHi") or "").strip()
+    q_hi = clean_question_stem(q.get("questionHi") or "")
     if not q_hi or not has_devanagari(q_hi):
         return True
     return False
@@ -84,40 +102,90 @@ def quiz_needs_pdfs(quiz: dict) -> bool:
 
 
 def fetch_quizzes_stdlib() -> list:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return []
-    url = f"{SUPABASE_URL}/rest/v1/site_cms_state?state_key=eq.{STATE_KEY}&select=state_value"
-    req = urllib.request.Request(
-        url,
-        headers={
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json", "User-Agent": "ECA-Bot/1.0",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=25) as resp:
-        rows = json.loads(resp.read().decode("utf-8"))
-    if not rows or not isinstance(rows[0].get("state_value"), list):
-        return []
-    return rows[0]["state_value"]
+    # Primary: Public Website API (works even without Supabase secrets in GitHub)
+    try:
+        api_url = f"{WEBSITE_URL}/api/smart-quizzes"
+        req = urllib.request.Request(api_url, headers={"User-Agent": "ECA-Bot/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if isinstance(data, dict) and isinstance(data.get("quizzes"), list):
+            return data["quizzes"]
+    except Exception as e:
+        print(f"[fetch website api warn] {e}", file=sys.stderr)
+
+    # Fallback: Direct Supabase REST
+    if SUPABASE_URL and SUPABASE_KEY:
+        url = f"{SUPABASE_URL}/rest/v1/site_cms_state?state_key=eq.{STATE_KEY}&select=state_value"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "ECA-Bot/1.0",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            rows = json.loads(resp.read().decode("utf-8"))
+        if rows and isinstance(rows[0].get("state_value"), list):
+            return rows[0]["state_value"]
+    return []
 
 
-def save_quizzes_supabase(quizzes: list) -> None:
+def save_quiz_update(quiz: dict, all_quizzes: list) -> None:
     import requests
 
-    sb_headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates",
-    }
-    up = requests.post(
-        f"{SUPABASE_URL}/rest/v1/site_cms_state?on_conflict=state_key",
-        headers=sb_headers,
-        json={"state_key": STATE_KEY, "state_value": quizzes},
-        timeout=45,
-    )
-    up.raise_for_status()
+    # Primary: Save via Website API using BOT_API_SECRET (so Supabase secrets live only on Vercel)
+    if BOT_API_SECRET:
+        payload = {
+            "action": "sync_bilingual_pdfs",
+            "slug": quiz.get("slug"),
+            "titleEn": quiz.get("titleEn"),
+            "titleHi": quiz.get("titleHi"),
+            "questions": quiz.get("questions"),
+            "pdfUrls": quiz.get("pdfUrls"),
+        }
+        last_err = None
+        for attempt in range(4):
+            try:
+                r = requests.post(
+                    f"{WEBSITE_URL}/api/smart-quizzes",
+                    headers={
+                        "Authorization": f"Bearer {BOT_API_SECRET}",
+                        "Content-Type": "application/json",
+                        "User-Agent": "ECA-Bot/1.0",
+                    },
+                    json=payload,
+                    timeout=60,
+                )
+                if r.ok and r.json().get("ok"):
+                    return
+                last_err = f"HTTP {r.status_code}: {r.text[:200]}"
+            except Exception as e:
+                last_err = str(e)
+            print(f"  [save retry {attempt + 1}/4] {last_err}")
+            time.sleep(15)
+        if not (SUPABASE_URL and SUPABASE_KEY):
+            raise RuntimeError(f"Failed to save via website API: {last_err}")
+
+    # Fallback: Direct Supabase upsert
+    if SUPABASE_URL and SUPABASE_KEY:
+        sb_headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates",
+        }
+        up = requests.post(
+            f"{SUPABASE_URL}/rest/v1/site_cms_state?on_conflict=state_key",
+            headers=sb_headers,
+            json={"state_key": STATE_KEY, "state_value": all_quizzes},
+            timeout=45,
+        )
+        up.raise_for_status()
+        return
+
+    raise RuntimeError("Missing BOT_API_SECRET (and SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY) to save updates.")
 
 
 def _extract_json(raw: str):
@@ -136,14 +204,14 @@ def _extract_json(raw: str):
 def _call_ai_json(prompt: str):
     import requests
 
-    # Tier 1: 4 Gemini models
-    if GEMINI_KEY:
+    # Tier 1: 4 Gemini models across all configured Gemini keys
+    for ki, gkey in enumerate(GEMINI_KEYS):
         for model in GEMINI_MODELS:
-            tag = f"gemini:{model}"
+            tag = f"gemini{ki}:{model}"
             if tag in EXHAUSTED_MODELS:
                 continue
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gkey}"
                 r = requests.post(
                     url,
                     json={
@@ -155,12 +223,12 @@ def _call_ai_json(prompt: str):
                     },
                     timeout=90,
                 )
-                if r.status_code in (403, 404, 429):
+                if r.status_code in (400, 403, 404, 429):
                     print(f"[AI skip] {tag} HTTP {r.status_code}")
                     EXHAUSTED_MODELS.add(tag)
                     continue
                 if not r.ok:
-                    print(f"[AI warn] {tag} HTTP {r.status_code}: {r.text[:160]}")
+                    print(f"[AI warn] {tag} HTTP {r.status_code}: {r.text[:140]}")
                     continue
                 data = r.json()
                 text = data["candidates"][0]["content"]["parts"][0]["text"]
@@ -168,17 +236,17 @@ def _call_ai_json(prompt: str):
             except Exception as e:
                 print(f"[AI err] {tag}: {e}")
 
-    # Tier 2: 4 Groq models
-    if GROQ_KEY:
+    # Tier 2: 4 Groq models across all configured Groq keys
+    for ki, grkey in enumerate(GROQ_KEYS):
         for model in GROQ_MODELS:
-            tag = f"groq:{model}"
+            tag = f"groq{ki}:{model}"
             if tag in EXHAUSTED_MODELS:
                 continue
             try:
                 r = requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={
-                        "Authorization": f"Bearer {GROQ_KEY}",
+                        "Authorization": f"Bearer {grkey}",
                         "Content-Type": "application/json",
                     },
                     json={
@@ -199,7 +267,7 @@ def _call_ai_json(prompt: str):
                     EXHAUSTED_MODELS.add(tag)
                     continue
                 if not r.ok:
-                    print(f"[AI warn] {tag} HTTP {r.status_code}: {r.text[:160]}")
+                    print(f"[AI warn] {tag} HTTP {r.status_code}: {r.text[:140]}")
                     continue
                 data = r.json()
                 text = data["choices"][0]["message"]["content"]
@@ -227,7 +295,7 @@ def translate_batch(items: list, to_lang: str) -> dict:
         )
 
     prompt = f"{instruction}\n\nINPUT JSON:\n{json.dumps(items, ensure_ascii=False)}"
-    for attempt in range(2):
+    for _ in range(2):
         res = _call_ai_json(prompt)
         if isinstance(res, dict) and isinstance(res.get("items"), list):
             res = res["items"]
@@ -241,7 +309,7 @@ def translate_batch(items: list, to_lang: str) -> dict:
             if not isinstance(obj, dict):
                 continue
             qid = str(obj.get("id") or "")
-            qtxt = str(obj.get("question") or "").strip()
+            qtxt = clean_question_stem(obj.get("question") or "")
             opts = obj.get("options") or {}
             exp = str(obj.get("explanation") or "").strip()
             if not qid or not qtxt or not isinstance(opts, dict):
@@ -271,30 +339,35 @@ def translate_quiz_if_needed(quiz: dict) -> bool:
     if not qs:
         return False
 
+    # Clean any stray ==== banner lines from existing question stems first
+    for q in qs:
+        for fld in ("questionEn", "questionHi"):
+            orig = str(q.get(fld) or "")
+            cleaned = clean_question_stem(orig)
+            if cleaned and cleaned != orig:
+                q[fld] = cleaned
+                changed = True
+
     # Translate titleEn / titleHi if needed
     t_en = str(quiz.get("titleEn") or "").strip()
     t_hi = str(quiz.get("titleHi") or "").strip()
     if (not t_en or has_devanagari(t_en)) and t_hi:
-        res = _call_ai_json(
-            f'Translate this exam title into crisp English. Return JSON {{"title": "..."}}.\nTitle: {t_hi}'
-        )
+        res = _call_ai_json(f'Translate this exam title into crisp English. Return JSON {{"title": "..."}}.\nTitle: {t_hi}')
         if isinstance(res, dict) and res.get("title") and not has_devanagari(res["title"]):
             quiz["titleEn"] = str(res["title"]).strip()
             changed = True
     if (not t_hi or not has_devanagari(t_hi)) and (quiz.get("titleEn") or t_en):
         src_t = quiz.get("titleEn") or t_en
-        res = _call_ai_json(
-            f'Translate this exam title into standard Devanagari Hindi. Return JSON {{"title": "..."}}.\nTitle: {src_t}'
-        )
+        res = _call_ai_json(f'Translate this exam title into standard Devanagari Hindi. Return JSON {{"title": "..."}}.\nTitle: {src_t}')
         if isinstance(res, dict) and res.get("title") and has_devanagari(res["title"]):
             quiz["titleHi"] = str(res["title"]).strip()
             changed = True
 
-    # 1. Hindi -> English for questions needing English
+    # 1. Hindi -> English
     en_todo = []
     for idx, q in enumerate(qs):
         if question_needs_en(q):
-            src_q = str(q.get("questionHi") or q.get("questionEn") or "").strip()
+            src_q = clean_question_stem(q.get("questionHi") or q.get("questionEn") or "")
             src_opts = q.get("optionsHi") or q.get("optionsEn") or {}
             src_exp = str(q.get("explanationHi") or q.get("explanationEn") or "").strip()
             if src_q:
@@ -307,9 +380,8 @@ def translate_quiz_if_needed(quiz: dict) -> bool:
 
     if en_todo:
         print(f"  [Translate -> EN] {len(en_todo)} questions pending...")
-        batch_size = 8
-        for start in range(0, len(en_todo), batch_size):
-            chunk = en_todo[start : start + batch_size]
+        for start in range(0, len(en_todo), 8):
+            chunk = en_todo[start : start + 8]
             translated = translate_batch([c[1] for c in chunk], "en")
             hit = 0
             for idx, item in chunk:
@@ -324,11 +396,11 @@ def translate_quiz_if_needed(quiz: dict) -> bool:
             print(f"    EN batch {start + 1}-{start + len(chunk)}: {hit}/{len(chunk)} translated")
             time.sleep(0.5)
 
-    # 2. English -> Hindi for questions needing Hindi
+    # 2. English -> Hindi
     hi_todo = []
     for idx, q in enumerate(qs):
         if question_needs_hi(q):
-            src_q = str(q.get("questionEn") or q.get("questionHi") or "").strip()
+            src_q = clean_question_stem(q.get("questionEn") or q.get("questionHi") or "")
             src_opts = q.get("optionsEn") or q.get("optionsHi") or {}
             src_exp = str(q.get("explanationEn") or q.get("explanationHi") or "").strip()
             if src_q:
@@ -341,9 +413,8 @@ def translate_quiz_if_needed(quiz: dict) -> bool:
 
     if hi_todo:
         print(f"  [Translate -> HI] {len(hi_todo)} questions pending...")
-        batch_size = 8
-        for start in range(0, len(hi_todo), batch_size):
-            chunk = hi_todo[start : start + batch_size]
+        for start in range(0, len(hi_todo), 8):
+            chunk = hi_todo[start : start + 8]
             translated = translate_batch([c[1] for c in chunk], "hi")
             hit = 0
             for idx, item in chunk:
@@ -369,7 +440,7 @@ def _logo_uri() -> str:
 
 
 def _fmt_lines(text: str) -> str:
-    escaped = html.escape(str(text or "").strip())
+    escaped = html.escape(clean_question_stem(text))
     escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
     return escaped.replace("\n", "<br/>")
 
@@ -658,12 +729,14 @@ def check_only() -> None:
         return
     try:
         quizzes = fetch_quizzes_stdlib()
+        print(f"CHECK_LOADED={len(quizzes)}")
     except Exception as e:
         print(f"CHECK_ERR={e}", file=sys.stderr)
         print("NEEDS_WORK=false")
         return
     for q in quizzes:
         if quiz_needs_translation(q) or quiz_needs_pdfs(q):
+            print(f"PENDING_QUIZ={q.get('slug')}")
             print("NEEDS_WORK=true")
             return
     print("NEEDS_WORK=false")
@@ -674,15 +747,18 @@ def main():
         check_only()
         return
 
-    if not SUPABASE_URL or not SUPABASE_KEY or not GH_TOKEN:
-        print("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or GITHUB_TOKEN.")
+    if not GH_TOKEN:
+        print("Missing GITHUB_TOKEN.")
+        sys.exit(1)
+    if not BOT_API_SECRET and not (SUPABASE_URL and SUPABASE_KEY):
+        print("Missing BOT_API_SECRET and SUPABASE credentials.")
         sys.exit(1)
 
     from weasyprint import HTML
 
     quizzes = fetch_quizzes_stdlib()
+    print(f"Loaded {len(quizzes)} smart quizzes from website/Supabase.")
     if not quizzes:
-        print("No smart quizzes found.")
         return
 
     out_dir = pathlib.Path("/tmp/smart_quiz_pdfs")
@@ -704,9 +780,9 @@ def main():
         if needs_tr:
             tr_changed = translate_quiz_if_needed(q)
             if tr_changed:
-                save_quizzes_supabase(quizzes)
+                save_quiz_update(q, quizzes)
                 updated_any = True
-                print(f"  [Saved] Bilingual translations saved to Supabase for {slug}")
+                print(f"  [Saved] Bilingual translations saved for {slug}")
 
         safe_slug = re.sub(r"[^a-zA-Z0-9_-]+", "_", slug)[:60]
         print(f"  [PDF] Building 4 branded WeasyPrint PDFs for: {slug}")
@@ -726,9 +802,9 @@ def main():
             print(f"    -> Uploaded {fname}")
 
         q["pdfUrls"] = pdf_urls
-        save_quizzes_supabase(quizzes)
+        save_quiz_update(q, quizzes)
         updated_any = True
-        print(f"  [Done] Saved 4 direct Branded PDF URLs to Supabase for {slug}")
+        print(f"  [Done] Saved 4 direct Branded PDF URLs for {slug}")
 
     if not updated_any:
         print("All quizzes are already bilingual and have direct Branded PDFs.")
