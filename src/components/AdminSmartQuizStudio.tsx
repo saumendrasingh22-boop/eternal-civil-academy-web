@@ -5,6 +5,8 @@ import { Upload, Sparkles, CheckCircle2, Trash2, FileText, Play, Clock } from "l
 import { parseSmartQuizText } from "@/lib/smartQuizParser";
 import {
   SMART_QUIZ_SECTIONS,
+  SMART_QUIZ_SUBSECTIONS,
+  SMART_QUIZ_SUBJECTS,
   type SmartQuizItem,
   type SmartQuizTarget,
   type SmartQuizPublishMode,
@@ -20,6 +22,8 @@ export default function AdminSmartQuizStudio() {
   const [titleEn, setTitleEn] = useState("");
   const [titleHi, setTitleHi] = useState("");
   const [targetSection, setTargetSection] = useState<SmartQuizTarget>("test_series");
+  const [subSection, setSubSection] = useState("");
+  const [subjectTag, setSubjectTag] = useState("All Subjects / Full GS");
   const [commissionOrExam, setCommissionOrExam] = useState("UPPSC");
   const [yearOrTag, setYearOrTag] = useState("2026");
   const [pricingType, setPricingType] = useState<"free" | "paid">("free");
@@ -153,6 +157,8 @@ export default function AdminSmartQuizStudio() {
         titleEn: finalTitleEn,
         titleHi: finalTitleHi,
         targetSection,
+        subSection: subSection.trim() || undefined,
+        subjectTag: subjectTag.trim() || undefined,
         commissionOrExam: commissionOrExam.trim(),
         yearOrTag: yearOrTag.trim() || "2026",
         pricingType,
@@ -282,6 +288,66 @@ export default function AdminSmartQuizStudio() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Sub-Section Input + Quick Chips (e.g., NCERT Class 06, Class 02, Full-Length Mock) */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-extrabold text-slate-700 mb-1">
+            Sub-Section / Class / Category (e.g. NCERT Class 06, Class 02, Full-Length Mock)
+          </label>
+          <input
+            type="text"
+            value={subSection}
+            onChange={(e) => setSubSection(e.target.value)}
+            placeholder="Type ANY sub-section e.g., NCERT Class 06, NCERT Class 02, Chapter 1, Full-Length Mock..."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-[#0B1B3D] focus:border-[#0B1B3D] outline-none"
+          />
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {(SMART_QUIZ_SUBSECTIONS[targetSection] || []).map((sub) => (
+              <button
+                key={sub}
+                type="button"
+                onClick={() => setSubSection(sub)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold border transition ${
+                  subSection.toLowerCase() === sub.toLowerCase()
+                    ? "bg-[#E60000] text-white border-[#E60000]"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject-Wise Tag Input + Quick Chips */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-extrabold text-slate-700 mb-1">
+            Subject Filter Tag (For Subject-Wise Filtering on Website)
+          </label>
+          <input
+            type="text"
+            value={subjectTag}
+            onChange={(e) => setSubjectTag(e.target.value)}
+            placeholder="Type ANY subject e.g., History, Polity, Geography, Science, Current Affairs..."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-[#0B1B3D] focus:border-[#0B1B3D] outline-none"
+          />
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {SMART_QUIZ_SUBJECTS.map((subj) => (
+              <button
+                key={subj}
+                type="button"
+                onClick={() => setSubjectTag(subj)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold border transition ${
+                  subjectTag.toLowerCase() === subj.toLowerCase()
+                    ? "bg-[#0B1B3D] text-white border-[#0B1B3D]"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                {subj}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Custom Exam / Commission Input + Quick Chips */}

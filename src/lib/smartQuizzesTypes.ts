@@ -31,6 +31,8 @@ export interface SmartQuizItem {
   titleEn: string;
   titleHi: string;
   targetSection: SmartQuizTarget;
+  subSection?: string;
+  subjectTag?: string;
   commissionOrExam: string;
   yearOrTag: string;
   pricingType: "free" | "paid";
@@ -45,3 +47,107 @@ export interface SmartQuizItem {
   pdfUrls?: { qEn?: string; qHi?: string; sEn?: string; sHi?: string };
   createdAt: string;
 }
+
+export const SMART_QUIZ_SUBSECTIONS: Record<SmartQuizTarget, string[]> = {
+  test_series: [
+    "Full-Length Mock",
+    "NCERT Class 06",
+    "NCERT Class 07",
+    "NCERT Class 08",
+    "NCERT Class 09",
+    "NCERT Class 10",
+    "NCERT Class 11",
+    "NCERT Class 12",
+    "NCERT Class 01-05",
+    "Subject-Wise Test",
+    "Current Affairs Mock",
+    "CSAT Practice",
+  ],
+  pyq: [
+    "Prelims GS-I PYQ",
+    "Prelims CSAT PYQ",
+    "RO/ARO PYQ",
+    "Subject-Wise PYQ",
+    "Topic-Wise PYQ",
+    "NCERT Based PYQ",
+  ],
+  daily_practice: [
+    "Daily NCERT Quiz",
+    "Daily CA MCQ",
+    "NCERT Class 06",
+    "NCERT Class 07",
+    "NCERT Class 08",
+    "NCERT Class 09",
+    "NCERT Class 10",
+    "NCERT Class 11",
+    "NCERT Class 12",
+    "Quick Revision",
+  ],
+  current_affairs: [
+    "Monthly Compilation",
+    "Weekly Current Affairs",
+    "National & International",
+    "Economy & Budget",
+    "Schemes & Reports",
+    "Science & Defence",
+  ],
+  state_special: [
+    "UP Special",
+    "Bihar Special",
+    "Rajasthan Special",
+    "MP Special",
+    "Haryana Special",
+    "Uttarakhand Special",
+    "Jharkhand Special",
+  ],
+  material: [
+    "NCERT Class 06",
+    "NCERT Class 07",
+    "NCERT Class 08",
+    "NCERT Class 09",
+    "NCERT Class 10",
+    "NCERT Class 11",
+    "NCERT Class 12",
+    "NCERT Class 01-05",
+    "Standard Books",
+    "Short Revision Notes",
+  ],
+  monthly_magazine: [
+    "Monthly Magazine MCQs",
+    "Yearly Compilation",
+    "Budget & Economic Survey",
+    "PIB Summary",
+  ],
+  batches: [
+    "Foundation Batch",
+    "Prelims Booster",
+    "NCERT Foundation",
+    "RO/ARO Target Batch",
+    "State PCS Batch",
+  ],
+  student_hub: [
+    "NCERT Class 06",
+    "NCERT Class 07",
+    "NCERT Class 08",
+    "NCERT Class 09",
+    "NCERT Class 10",
+    "NCERT Class 11",
+    "NCERT Class 12",
+    "Self-Assessment",
+  ],
+};
+
+export const SMART_QUIZ_SUBJECTS: string[] = [
+  "All Subjects / Full GS",
+  "History",
+  "Polity & Governance",
+  "Geography",
+  "Economy",
+  "General Science",
+  "Environment & Ecology",
+  "Current Affairs",
+  "Art & Culture",
+  "CSAT",
+  "State Special",
+  "General Hindi",
+];

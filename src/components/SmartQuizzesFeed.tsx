@@ -76,6 +76,8 @@ export default function SmartQuizzesFeed({
 }) {
   const [quizzes, setQuizzes] = useState<SmartQuizItem[]>([]);
   const [submittedSlugs, setSubmittedSlugs] = useState<string[]>([]);
+  const [selectedSubSection, setSelectedSubSection] = useState<string>("ALL");
+  const [selectedSubject, setSelectedSubject] = useState<string>("ALL");
 
   useEffect(() => {
     try {
@@ -100,18 +102,28 @@ export default function SmartQuizzesFeed({
   }, [targetSection]);
 
   const defaultComms = ["upsc", "uppsc", "bpsc", "rpsc", "mppsc", "hpsc", "jpsc"];
-  const filtered = quizzes.filter((q) => {
-    if (commissionFilter) {
-      const qExam = q.commissionOrExam.toLowerCase();
-      const sel = commissionFilter.toLowerCase();
-      const isCustomExam = !defaultComms.some((c) => qExam.includes(c));
-      if (!qExam.includes(sel) && !isCustomExam) return false;
+    const baseFiltered = quizzes.filter((q) => {
+    if (commissionFilter && q.commissionOrExam.toLowerCase() !== commissionFilter.toLowerCase()) {
+      return false;
     }
     if (pricingFilter && q.pricingType !== pricingFilter) return false;
     return true;
   });
 
-  if (filtered.length === 0) return null;
+  const subSectionOptions = Array.from(
+    new Set(baseFiltered.map((q) => (q.subSection || "").trim()).filter(Boolean))
+  );
+  const subjectOptions = Array.from(
+    new Set(baseFiltered.map((q) => (q.subjectTag || "").trim()).filter(Boolean))
+  );
+
+  const filtered = baseFiltered.filter((q) => {
+    if (selectedSubSection !== "ALL" && (q.subSection || "").trim() !== selectedSubSection) return false;
+    if (selectedSubject !== "ALL" && (q.subjectTag || "").trim() !== selectedSubject) return false;
+    return true;
+  });
+
+  if (baseFiltered.length === 0) return null;
 
   
   const handleDirectPdf = (q: SmartQuizItem, variant: "qEn" | "qHi" | "sEn" | "sHi") => {
@@ -141,6 +153,82 @@ export default function SmartQuizzesFeed({
         </div>
       </div>
 
+      {(subSectionOptions.length > 0 || subjectOptions.length > 0) && (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+          {subSectionOptions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-extrabold text-slate-600 mr-1">
+                {isHi ? "सब-सेक्शन:" : "Sub-Section:"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSubSection("ALL")}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition ${
+                  selectedSubSection === "ALL"
+                    ? "bg-[#E60000] text-white border-[#E60000]"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                {isHi ? "सभी" : "All"}
+              </button>
+              {subSectionOptions.map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => setSelectedSubSection(sub)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition ${
+                    selectedSubSection === sub
+                      ? "bg-[#E60000] text-white border-[#E60000]"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {subjectOptions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-extrabold text-slate-600 mr-1">
+                {isHi ? "विषय (Subject):" : "Subject:"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSubject("ALL")}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition ${
+                  selectedSubject === "ALL"
+                    ? "bg-[#0B1B3D] text-white border-[#0B1B3D]"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                {isHi ? "सभी विषय" : "All Subjects"}
+              </button>
+              {subjectOptions.map((subj) => (
+                <button
+                  key={subj}
+                  type="button"
+                  onClick={() => setSelectedSubject(subj)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition ${
+                    selectedSubject === subj
+                      ? "bg-[#0B1B3D] text-white border-[#0B1B3D]"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                  }`}
+                >
+                  {subj}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <div className="text-center py-6 text-xs font-bold text-slate-500 bg-white rounded-2xl border border-slate-200">
+          {isHi ? "इस फ़िल्टर में अभी कोई टेस्ट नहीं है।" : "No tests match the selected sub-section / subject filter."}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filtered.map((q) => {
           const schedMs = q.publishMode === "scheduled" && q.scheduledAtIso ? Date.parse(q.scheduledAtIso) : 0;
@@ -157,6 +245,16 @@ export default function SmartQuizzesFeed({
                   <span className="bg-[#0B1B3D] text-white font-extrabold px-2.5 py-0.5 rounded-md">
                     {q.commissionOrExam} • {q.yearOrTag}
                   </span>
+                  {q.subSection && (
+                    <span className="bg-red-50 text-[#E60000] border border-red-200 font-extrabold px-2.5 py-0.5 rounded-md">
+                      {q.subSection}
+                    </span>
+                  )}
+                  {q.subjectTag && (
+                    <span className="bg-indigo-50 text-indigo-800 border border-indigo-200 font-extrabold px-2.5 py-0.5 rounded-md">
+                      {q.subjectTag}
+                    </span>
+                  )}
                   <span className="bg-slate-100 text-slate-700 font-bold px-2.5 py-0.5 rounded-md">
                     {q.questions.length} MCQs • {q.durationMinutes} min
                   </span>
