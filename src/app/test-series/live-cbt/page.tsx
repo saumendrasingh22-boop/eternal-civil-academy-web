@@ -416,9 +416,9 @@ export default function LiveCbtSimulatorPage() {
               filteredQuestions.map((q) => {
                 const userAns = answers[q.id];
                 const isRight = userAns === q.correct;
-                const qText = lang === "hi" ? q.questionHi : q.questionEn;
+                const qText = formatExamStem(lang === "hi" ? q.questionHi : q.questionEn);
                 const opts = lang === "hi" ? q.optionsHi : q.optionsEn;
-                const exp = lang === "hi" ? q.explanationHi : q.explanationEn;
+                const exp = formatExamExplanation(lang === "hi" ? q.explanationHi : q.explanationEn);
 
                 return (
                   <div key={q.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50">
@@ -438,7 +438,7 @@ export default function LiveCbtSimulatorPage() {
                         {!userAns ? "Skipped" : isRight ? "Correct (+2.00)" : "Mistake (-0.66)"}
                       </span>
                     </div>
-                    <p className="text-sm font-bold text-slate-900">{qText}</p>
+                    <p className="text-sm font-bold text-slate-900 whitespace-pre-line">{qText}</p>
                     {userAns && !isRight && (
                       <p className="text-xs text-[#E60000] font-bold mt-1.5">
                         Your Answer: {userAns}. {opts[userAns]}
@@ -447,7 +447,7 @@ export default function LiveCbtSimulatorPage() {
                     <p className="text-xs text-emerald-700 font-bold mt-1">
                       Correct Answer: {q.correct}. {opts[q.correct]}
                     </p>
-                    <p className="text-xs text-slate-600 mt-1.5">{exp}</p>
+                    <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-line">{exp}</p>
                   </div>
                 );
               })
@@ -458,7 +458,7 @@ export default function LiveCbtSimulatorPage() {
     );
   }
 
-  const questionText = lang === "hi" ? currentQ.questionHi : currentQ.questionEn;
+  const questionText = formatExamStem(lang === "hi" ? currentQ.questionHi : currentQ.questionEn);
   const optionsMap = lang === "hi" ? currentQ.optionsHi : currentQ.optionsEn;
 
   return (
@@ -513,7 +513,7 @@ export default function LiveCbtSimulatorPage() {
               </span>
             </div>
 
-            <p className="text-base sm:text-lg font-bold text-slate-900">{questionText}</p>
+            <p className="text-base sm:text-lg font-bold text-slate-900 whitespace-pre-line">{questionText}</p>
 
             <div className="mt-5 space-y-3">
               {(["A", "B", "C", "D"] as const).map((opt) => {
