@@ -47,6 +47,7 @@ function formatExamExplanation(text: string): string {
 export default function LiveCbtSimulatorPage() {
   const [testTitle, setTestTitle] = useState("Daily GS & Current Affairs Live Mock Test");
   const [questions, setQuestions] = useState<BilingualCbtQuestion[]>(CBT_QUESTIONS);
+  const [smartPdfUrls, setSmartPdfUrls] = useState<Record<string, string>>({});
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
@@ -70,6 +71,7 @@ export default function LiveCbtSimulatorPage() {
           if (sq && Array.isArray(sq.questions) && sq.questions.length > 0) {
             const lg = params.get("lang"); if (lg === "hi" || lg === "en") setLang(lg); setTestTitle(lg === "hi" ? (sq.titleHi || sq.titleEn) : (sq.titleEn || sq.titleHi));
             setQuestions(sq.questions);
+          if (sq.pdfUrls) setSmartPdfUrls(sq.pdfUrls);
             setTimeLeft(Math.max(120, Number(sq.durationMinutes || 60) * 60));
           }
         })
@@ -357,7 +359,7 @@ export default function LiveCbtSimulatorPage() {
                     if (pdfPickerType === "mistakes") {
                       exportMistakesPdfReport(testTitle, mistakesPayload, "en");
                     } else {
-                      exportTestPaperPdf(testTitle, questions, "en", pdfPickerType === "solution");
+                      const uEn = pdfPickerType === "solution" ? smartPdfUrls.sEn : smartPdfUrls.qEn; if (uEn) { window.location.href = "/api/download-pdf?url=" + encodeURIComponent(uEn) + "&name=" + encodeURIComponent("ECA_Test_" + pdfPickerType + "_EN.pdf"); } else { exportTestPaperPdf(testTitle, questions, "en", pdfPickerType === "solution"); }
                     }
                     setPdfPickerType(null);
                   }}
@@ -370,7 +372,7 @@ export default function LiveCbtSimulatorPage() {
                     if (pdfPickerType === "mistakes") {
                       exportMistakesPdfReport(testTitle, mistakesPayload, "hi");
                     } else {
-                      exportTestPaperPdf(testTitle, questions, "hi", pdfPickerType === "solution");
+                      const uHi = pdfPickerType === "solution" ? smartPdfUrls.sHi : smartPdfUrls.qHi; if (uHi) { window.location.href = "/api/download-pdf?url=" + encodeURIComponent(uHi) + "&name=" + encodeURIComponent("ECA_Test_" + pdfPickerType + "_HI.pdf"); } else { exportTestPaperPdf(testTitle, questions, "hi", pdfPickerType === "solution"); }
                     }
                     setPdfPickerType(null);
                   }}
