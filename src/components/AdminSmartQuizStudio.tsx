@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Upload, Sparkles, Calendar, CheckCircle2, Trash2, FileText, Play, Clock } from "lucide-react";
+import { Upload, Sparkles, CheckCircle2, Trash2, FileText, Play, Clock } from "lucide-react";
 import { parseSmartQuizText } from "@/lib/smartQuizParser";
-import type { SmartQuizItem, SmartQuizTarget, SmartQuizPublishMode } from "@/lib/smartQuizzesTypes";
+import {
+  SMART_QUIZ_SECTIONS,
+  type SmartQuizItem,
+  type SmartQuizTarget,
+  type SmartQuizPublishMode,
+} from "@/lib/smartQuizzesTypes";
 import type { BilingualCbtQuestion } from "@/lib/siteData";
 import { getAdminAccessToken } from "@/lib/adminTokenHelper";
 import { exportTestPaperPdf } from "@/lib/mistakesPdfExport";
 
-const EXAMS = ["UPSC", "UPPSC", "BPSC", "RPSC", "MPPSC", "HPSC", "JPSC", "SSC / Other"];
+const QUICK_EXAMS = ["UPSC", "UPPSC", "BPSC", "RPSC", "MPPSC", "HPSC", "JPSC", "UKPSC", "RO/ARO", "SSC"];
 
 export default function AdminSmartQuizStudio() {
   const [rawText, setRawText] = useState("");
@@ -71,6 +76,10 @@ export default function AdminSmartQuizStudio() {
     }
     if (!titleEn.trim() && !titleHi.trim()) {
       setStatusMsg("Please enter a Quiz / PYQ Title.");
+      return;
+    }
+    if (!commissionOrExam.trim()) {
+      setStatusMsg("Please enter an Exam / Commission name.");
       return;
     }
     if (publishMode === "scheduled" && !scheduledAt) {
@@ -144,7 +153,7 @@ export default function AdminSmartQuizStudio() {
         titleEn: finalTitleEn,
         titleHi: finalTitleHi,
         targetSection,
-        commissionOrExam,
+        commissionOrExam: commissionOrExam.trim(),
         yearOrTag: yearOrTag.trim() || "2026",
         pricingType,
         priceInr: pricingType === "paid" ? Number(priceInr || 0) : 0,
@@ -171,10 +180,9 @@ export default function AdminSmartQuizStudio() {
         throw new Error(saveData?.error || "Failed to publish quiz");
       }
 
+      const secInfo = SMART_QUIZ_SECTIONS.find((x) => x.id === targetSection);
       setStatusMsg(
-        `Published "${finalTitleEn}" (${finalQuestions.length} bilingual EN + HI questions) to ${
-          targetSection === "pyq" ? "PYQ Section" : "Test Series Section"
-        }!`
+        `Published "${finalTitleEn}" (${finalQuestions.length} bilingual EN + HI questions) to ${secInfo?.label || targetSection}!`
       );
       setRawText("");
       setParsedQuestions([]);
@@ -199,6 +207,11 @@ export default function AdminSmartQuizStudio() {
     await loadPublished();
   };
 
+  const sectionLabelMap: Record<string, string> = {};
+  SMART_QUIZ_SECTIONS.forEach((s) => {
+    sectionLabelMap[s.id] = s.id.replace(/_/g, " ").toUpperCase();
+  });
+
   return (
     <div className="bg-white rounded-2xl border-2 border-[#0B1B3D]/15 shadow-sm p-5 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
@@ -210,7 +223,7 @@ export default function AdminSmartQuizStudio() {
             Upload .txt or Paste Quiz → Auto EN + HI Live CBT &amp; Dual PDF
           </h2>
           <p className="text-xs text-slate-600 mt-0.5">
-            Supports A) B) C) D) with ✅ correct mark and Ex: explanation bullets. Publishes to PYQ or Test Series.
+            Publish to ANY website section with custom Exam/Commission name, scheduling, Live CBT attempt, and EN + हिन्दी PDFs.
           </p>
         </div>
         <label className="cursor-pointer inline-flex items-center gap-2 bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition">
@@ -243,68 +256,91 @@ export default function AdminSmartQuizStudio() {
           />
         </div>
         <div>
-          <label className="block text-xs font-extrabold text-slate-700 mb-1">Target Website Section</label>
+          <label className="block text-xs font-extrabold text-slate-700 mb-1">Target Website Section (All Sections)</label>
           <select
             value={targetSection}
             onChange={(e) => setTargetSection(e.target.value as SmartQuizTarget)}
             className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-[#0B1B3D]"
           >
-            <option value="test_series">Test Series Section (/test-series)</option>
-            <option value="pyq">PYQ Section (/pyq)</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-extrabold text-slate-700 mb-1">Commission / Exam</label>
-          <select
-            value={commissionOrExam}
-            onChange={(e) => setCommissionOrExam(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-          >
-            {EXAMS.map((ex) => (
-              <option key={ex} value={ex}>{ex}</option>
+            {SMART_QUIZ_SECTIONS.map((sec) => (
+              <option key={sec.id} value={sec.id}>
+                {sec.label}
+              </option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-xs font-extrabold text-slate-700 mb-1">Year / Paper Tag</label>
+
+        {/* Custom Exam / Commission Input + Quick Chips */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-extrabold text-slate-700 mb-1">
+            Commission / Exam Name (Type ANY custom exam or tap a quick tag)
+          </label>
           <input
             type="text"
-            value={yearOrTag}
-            onChange={(e) => setYearOrTag(e.target.value)}
-            placeholder="2026 / GS Paper-I"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+            value={commissionOrExam}
+            onChange={(e) => setCommissionOrExam(e.target.value)}
+            placeholder="Type any exam e.g., UPPSC RO/ARO, BPSC TRE 4.0, RAS, CDS, NDA, UGC NET..."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-[#0B1B3D] focus:border-[#0B1B3D] outline-none"
           />
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {QUICK_EXAMS.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                onClick={() => setCommissionOrExam(ex)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold border transition ${
+                  commissionOrExam.toLowerCase() === ex.toLowerCase()
+                    ? "bg-[#0B1B3D] text-white border-[#0B1B3D]"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-400"
+                }`}
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+
+        <div className="space-y-3">
           <div>
-            <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Mins</label>
+            <label className="block text-xs font-extrabold text-slate-700 mb-1">Year / Paper Tag</label>
             <input
-              type="number"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-sm"
+              type="text"
+              value={yearOrTag}
+              onChange={(e) => setYearOrTag(e.target.value)}
+              placeholder="2026 / GS Paper-I"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
-          <div>
-            <label className="block text-[11px] font-extrabold text-slate-700 mb-1">+Marks</label>
-            <input
-              type="number"
-              step="0.5"
-              value={positiveMarks}
-              onChange={(e) => setPositiveMarks(Number(e.target.value))}
-              className="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-extrabold text-slate-700 mb-1">-Neg</label>
-            <input
-              type="number"
-              step="0.01"
-              value={negativeMarks}
-              onChange={(e) => setNegativeMarks(Number(e.target.value))}
-              className="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-sm"
-            />
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Mins</label>
+              <input
+                type="number"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-extrabold text-slate-700 mb-1">+Marks</label>
+              <input
+                type="number"
+                step="0.5"
+                value={positiveMarks}
+                onChange={(e) => setPositiveMarks(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-extrabold text-slate-700 mb-1">-Neg</label>
+              <input
+                type="number"
+                step="0.01"
+                value={negativeMarks}
+                onChange={(e) => setNegativeMarks(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -434,7 +470,7 @@ export default function AdminSmartQuizStudio() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="bg-[#0B1B3D] text-white font-extrabold px-2 py-0.5 rounded">
-                      {q.targetSection === "pyq" ? "PYQ" : "TEST SERIES"}
+                      {sectionLabelMap[q.targetSection] || q.targetSection}
                     </span>
                     <span className="bg-red-50 text-[#E60000] font-extrabold px-2 py-0.5 rounded">
                       {q.commissionOrExam} • {q.yearOrTag}

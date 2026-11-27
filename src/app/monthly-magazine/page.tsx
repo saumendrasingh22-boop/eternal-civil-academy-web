@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import { useEffect, useState } from "react";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
@@ -56,6 +57,8 @@ export default function MonthlyMagazinePage() {
           </p>
         </div>
       )}
-    </div>
+    
+      <SmartQuizzesFeed targetSection="monthly_magazine" />
+</div>
   );
 }

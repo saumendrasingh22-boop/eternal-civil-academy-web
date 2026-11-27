@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -252,6 +253,8 @@ export default function BatchesPage() {
           })}
         </div>
       )}
-    </div>
+    
+      <SmartQuizzesFeed targetSection="batches" />
+</div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -97,6 +98,8 @@ export default function StudentHubPage() {
           </Link>
         ))}
       </div>
-    </div>
+    
+      <SmartQuizzesFeed targetSection="student_hub" />
+</div>
   );
 }

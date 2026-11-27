@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
@@ -353,6 +354,8 @@ export default function MaterialPage() {
         </div>
       )}
           <LiveAdminSectionFeed sectionMatch="NCERT" />
-    </div>
+    
+      <SmartQuizzesFeed targetSection="material" />
+</div>
   );
 }

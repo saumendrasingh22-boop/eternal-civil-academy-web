@@ -6,14 +6,71 @@ import { Play, Download, Clock, Calendar, FileText } from "lucide-react";
 import type { SmartQuizItem, SmartQuizTarget } from "@/lib/smartQuizzesTypes";
 import { exportTestPaperPdf } from "@/lib/mistakesPdfExport";
 
+const SECTION_HEADINGS: Record<SmartQuizTarget, { badgeEn: string; badgeHi: string; titleEn: string; titleHi: string }> = {
+  test_series: {
+    badgeEn: "Live Test Series & Dual PDFs (EN + HI)",
+    badgeHi: "लाइव टेस्ट सीरीज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Live CBT Test or Download Question & Solution PDFs",
+    titleHi: "ऑनलाइन CBT टेस्ट दें या प्रश्न-पत्र व व्याख्या PDF डाउनलोड करें",
+  },
+  pyq: {
+    badgeEn: "Interactive PYQ Tests & Dual PDFs (EN + HI)",
+    badgeHi: "इंटरैक्टिव PYQ टेस्ट और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt PYQ Quiz or Download Bilingual PDF",
+    titleHi: "PYQ क्विज़ अटेम्प्ट करें या द्विभाषी PDF डाउनलोड करें",
+  },
+  daily_practice: {
+    badgeEn: "Daily Practice Quizzes & Dual PDFs (EN + HI)",
+    badgeHi: "दैनिक अभ्यास क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Daily Practice Quiz or Download PDF",
+    titleHi: "दैनिक अभ्यास टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  current_affairs: {
+    badgeEn: "Current Affairs Quizzes & Dual PDFs (EN + HI)",
+    badgeHi: "करंट अफेयर्स क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Current Affairs Quiz or Download Bilingual PDF",
+    titleHi: "करंट अफेयर्स टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  state_special: {
+    badgeEn: "State Special Quizzes & Dual PDFs (EN + HI)",
+    badgeHi: "स्टेट स्पेशल क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt State Special Quiz or Download Bilingual PDF",
+    titleHi: "राज्य विशेष टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  material: {
+    badgeEn: "Practice Quizzes & Dual PDFs (EN + HI)",
+    badgeHi: "अभ्यास क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Material Practice Quiz or Download PDF",
+    titleHi: "नोट्स आधारित टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  monthly_magazine: {
+    badgeEn: "Monthly Magazine MCQs & Dual PDFs (EN + HI)",
+    badgeHi: "मासिक पत्रिका क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Monthly MCQ Test or Download Bilingual PDF",
+    titleHi: "मासिक MCQ टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  batches: {
+    badgeEn: "Batch Practice Tests & Dual PDFs (EN + HI)",
+    badgeHi: "बैच अभ्यास टेस्ट और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Batch Test or Download Bilingual PDF",
+    titleHi: "बैच टेस्ट अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+  student_hub: {
+    badgeEn: "Student Hub Quizzes & Dual PDFs (EN + HI)",
+    badgeHi: "स्टूडेंट हब क्विज़ और पीडीएफ (EN + हिन्दी)",
+    titleEn: "Attempt Practice Quiz or Download Bilingual PDF",
+    titleHi: "अभ्यास क्विज़ अटेम्प्ट करें या PDF डाउनलोड करें",
+  },
+};
+
 export default function SmartQuizzesFeed({
   targetSection,
-  lang,
+  lang = "hi",
   commissionFilter,
   pricingFilter,
 }: {
   targetSection: SmartQuizTarget;
-  lang: "en" | "hi";
+  lang?: "en" | "hi";
   commissionFilter?: string;
   pricingFilter?: "free" | "paid";
 }) {
@@ -33,9 +90,13 @@ export default function SmartQuizzesFeed({
     return () => clearInterval(iv);
   }, [targetSection]);
 
+  const defaultComms = ["upsc", "uppsc", "bpsc", "rpsc", "mppsc", "hpsc", "jpsc"];
   const filtered = quizzes.filter((q) => {
-    if (commissionFilter && q.commissionOrExam.toLowerCase() !== commissionFilter.toLowerCase()) {
-      return false;
+    if (commissionFilter) {
+      const qExam = q.commissionOrExam.toLowerCase();
+      const sel = commissionFilter.toLowerCase();
+      const isCustomExam = !defaultComms.some((c) => qExam.includes(c));
+      if (!qExam.includes(sel) && !isCustomExam) return false;
     }
     if (pricingFilter && q.pricingType !== pricingFilter) return false;
     return true;
@@ -43,27 +104,17 @@ export default function SmartQuizzesFeed({
 
   if (filtered.length === 0) return null;
 
+  const heading = SECTION_HEADINGS[targetSection] || SECTION_HEADINGS.test_series;
+
   return (
-    <div className="space-y-4 mb-8">
+    <div className="space-y-4 my-6">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
         <div>
           <span className="inline-block bg-red-50 text-[#E60000] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-            {targetSection === "pyq"
-              ? isHi
-                ? "इंटरैक्टिव PYQ टेस्ट और पीडीएफ (EN + हिन्दी)"
-                : "Interactive PYQ Tests & Dual PDFs (EN + HI)"
-              : isHi
-              ? "लाइव टेस्ट सीरीज़ और पीडीएफ (EN + हिन्दी)"
-              : "Live Test Series & Dual PDFs (EN + HI)"}
+            {isHi ? heading.badgeHi : heading.badgeEn}
           </span>
           <h2 className="text-lg sm:text-xl font-extrabold text-[#0B1B3D] mt-1">
-            {targetSection === "pyq"
-              ? isHi
-                ? `${commissionFilter || ""} PYQ क्विज़ अटेम्प्ट करें या PDF डाउनलोड करें`
-                : `Attempt ${commissionFilter || ""} PYQ Quiz or Download Bilingual PDF`
-              : isHi
-              ? "ऑनलाइन CBT टेस्ट दें या प्रश्न-पत्र व व्याख्या PDF डाउनलोड करें"
-              : "Attempt Live CBT Test or Download Question & Solution PDFs"}
+            {isHi ? heading.titleHi : heading.titleEn}
           </h2>
         </div>
       </div>

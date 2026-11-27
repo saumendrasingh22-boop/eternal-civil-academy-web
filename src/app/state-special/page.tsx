@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 import LiveAdminSectionFeed from "@/components/LiveAdminSectionFeed";
 
 import React, { useState, useEffect } from "react";
@@ -197,6 +198,8 @@ export default function StateSpecialPage() {
         </div>
       )}
           <LiveAdminSectionFeed sectionMatch="State Special" />
-    </div>
+    
+      <SmartQuizzesFeed targetSection="state_special" />
+</div>
   );
 }

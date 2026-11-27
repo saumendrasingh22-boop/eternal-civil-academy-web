@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -153,6 +154,8 @@ export default function CurrentAffairsPage() {
           );
         })}
       </div>
-    </div>
+    
+      <SmartQuizzesFeed targetSection="current_affairs" lang={lang} />
+</div>
   );
 }

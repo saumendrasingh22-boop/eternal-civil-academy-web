@@ -1,4 +1,5 @@
 "use client";
+import SmartQuizzesFeed from "@/components/SmartQuizzesFeed";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -665,6 +666,8 @@ export default function DailyPracticeTestPage() {
           )}
         </section>
       </div>
-    </div>
+    
+      <SmartQuizzesFeed targetSection="daily_practice" />
+</div>
   );
 }
