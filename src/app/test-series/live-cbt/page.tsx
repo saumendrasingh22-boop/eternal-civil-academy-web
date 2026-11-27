@@ -45,7 +45,7 @@ export default function LiveCbtSimulatorPage() {
         .then((d) => {
           const sq = d?.quiz;
           if (sq && Array.isArray(sq.questions) && sq.questions.length > 0) {
-            setTestTitle(initLang === "hi" ? (sq.titleHi || sq.titleEn) : (sq.titleEn || sq.titleHi));
+            const lg = params.get("lang"); if (lg === "hi" || lg === "en") setLang(lg); setTestTitle(lg === "hi" ? (sq.titleHi || sq.titleEn) : (sq.titleEn || sq.titleHi));
             setQuestions(sq.questions);
             setTimeLeft(Math.max(120, Number(sq.durationMinutes || 60) * 60));
           }
