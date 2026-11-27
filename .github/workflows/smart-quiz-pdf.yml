@@ -39,7 +39,7 @@ jobs:
       - name: Quick 2s Check for Pending Translation or PDFs
         id: check
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           QUIZ_SLUG: ${{ github.event.inputs.quiz_slug }}
         run: |
@@ -66,10 +66,10 @@ jobs:
       - name: Auto-Translate (EN/HI) & Build 4 Branded Direct-Download PDFs
         if: steps.check.outputs.needs_work == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.QUIZ_GEMINI_API_KEY || secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.QUIZ_GROQ_API_KEY || secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           QUIZ_SLUG: ${{ github.event.inputs.quiz_slug }}
         run: python automation_workers/smart_quiz_pdf_builder.py
