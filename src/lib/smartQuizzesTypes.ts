@@ -42,5 +42,6 @@ export interface SmartQuizItem {
   negativeMarks: number;
   sourceLang: "hi" | "en";
   questions: BilingualCbtQuestion[];
+  pdfUrls?: { qEn?: string; qHi?: string; sEn?: string; sHi?: string };
   createdAt: string;
 }

@@ -196,6 +196,20 @@ export default function AdminSmartQuizStudio() {
     }
   };
 
+  
+  const handleRebuildPdfs = async (slug: string) => {
+    const token = getAdminAccessToken();
+    if (!token) return;
+    setStatusMsg("Triggering branded WeasyPrint PDF build (~40 sec)...");
+    const r = await fetch("/api/smart-quizzes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: "rebuild_pdfs", slug }),
+    });
+    const d = await r.json();
+    setStatusMsg(d?.ok ? "Branded PDF build started! Direct .pdf downloads will be ready in ~45 seconds." : "Could not trigger PDF build (check GITHUB_PAT on Vercel).");
+  };
+
   const handleDelete = async (id: string) => {
     const token = getAdminAccessToken();
     if (!token) return;
@@ -490,14 +504,14 @@ export default function AdminSmartQuizStudio() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => exportTestPaperPdf(q.titleEn, q.questions, "en", true)}
+                    onClick={() => q.pdfUrls?.sEn ? (window.location.href = `/api/download-pdf?url=${encodeURIComponent(q.pdfUrls.sEn)}&name=${encodeURIComponent("ECA_" + q.slug + "_Solution_EN.pdf")}`) : exportTestPaperPdf(q.titleEn, q.questions, "en", true)}
                     className="inline-flex items-center gap-1 bg-white border border-slate-300 hover:border-[#0B1B3D] px-2.5 py-1.5 rounded-lg font-bold"
                   >
                     <FileText className="w-3.5 h-3.5" /> EN PDF
                   </button>
                   <button
                     type="button"
-                    onClick={() => exportTestPaperPdf(q.titleHi, q.questions, "hi", true)}
+                    onClick={() => q.pdfUrls?.sHi ? (window.location.href = `/api/download-pdf?url=${encodeURIComponent(q.pdfUrls.sHi)}&name=${encodeURIComponent("ECA_" + q.slug + "_Solution_HI.pdf")}`) : exportTestPaperPdf(q.titleHi, q.questions, "hi", true)}
                     className="inline-flex items-center gap-1 bg-white border border-slate-300 hover:border-[#0B1B3D] px-2.5 py-1.5 rounded-lg font-bold"
                   >
                     <FileText className="w-3.5 h-3.5" /> HI PDF
@@ -508,6 +522,13 @@ export default function AdminSmartQuizStudio() {
                   >
                     <Play className="w-3.5 h-3.5" /> Preview
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => handleRebuildPdfs(q.slug)}
+                    className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg font-bold"
+                  >
+                    {q.pdfUrls?.sEn ? "Rebuild PDFs" : "Generate Direct PDFs"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(q.id)}

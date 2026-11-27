@@ -1,0 +1,48 @@
+name: Smart Quiz Branded PDF Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      quiz_slug:
+        description: "Specific quiz slug (leave empty to build any missing PDFs)"
+        required: false
+        default: ""
+
+concurrency:
+  group: smart-quiz-pdf-builder
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-pdfs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install WeasyPrint & Noto Devanagari Fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0 fonts-noto-core fonts-noto-extra
+
+      - name: Install Python packages
+        run: |
+          pip install --upgrade pip
+          pip install requests weasyprint
+
+      - name: Build & Upload 4 Branded Direct-Download PDFs
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QUIZ_SLUG: ${{ github.event.inputs.quiz_slug }}
+        run: python automation_workers/smart_quiz_pdf_builder.py

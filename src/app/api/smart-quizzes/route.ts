@@ -112,6 +112,30 @@ async function callLlmJson(prompt: string): Promise<any | null> {
   return null;
 }
 
+
+async function triggerSmartQuizPdfWorkflow(quizSlug: string): Promise<boolean> {
+  const ghToken = (process.env.GITHUB_PAT || process.env.GITHUB_TOKEN || "").trim();
+  const repo = (process.env.GITHUB_REPO || "saumendrasingh22-boop/eternal-civil-academy-web").trim();
+  if (!ghToken) return false;
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/smart-quiz-pdf.yml/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${ghToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ref: "main", inputs: { quiz_slug: quizSlug || "" } }),
+      }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -225,7 +249,14 @@ Items: ${JSON.stringify(payload)}`;
       const next = [quiz, ...existing.filter((x) => x.id !== quiz.id)];
       const err = await saveAllQuizzes(next);
       if (err) return NextResponse.json({ ok: false, error: err }, { status: 500 });
-      return NextResponse.json({ ok: true, quiz, total: next.length });
+      const pdfTriggered = await triggerSmartQuizPdfWorkflow(quiz.slug);
+      return NextResponse.json({ ok: true, quiz, total: next.length, pdfTriggered });
+    }
+
+    if (action === "rebuild_pdfs") {
+      const slug = String(body?.slug || "");
+      const ok = await triggerSmartQuizPdfWorkflow(slug);
+      return NextResponse.json({ ok, triggered: ok });
     }
 
     if (action === "delete") {

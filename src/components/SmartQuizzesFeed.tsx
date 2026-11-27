@@ -104,6 +104,19 @@ export default function SmartQuizzesFeed({
 
   if (filtered.length === 0) return null;
 
+  
+  const handleDirectPdf = (q: SmartQuizItem, variant: "qEn" | "qHi" | "sEn" | "sHi") => {
+    const directUrl = q.pdfUrls?.[variant];
+    const isHiVar = variant === "qHi" || variant === "sHi";
+    const isSol = variant === "sEn" || variant === "sHi";
+    if (directUrl) {
+      const fname = `ECA_${q.slug}_${variant}.pdf`;
+      window.location.href = `/api/download-pdf?url=${encodeURIComponent(directUrl)}&name=${encodeURIComponent(fname)}`;
+      return;
+    }
+    exportTestPaperPdf(isHiVar ? (q.titleHi || q.titleEn) : (q.titleEn || q.titleHi), q.questions, isHiVar ? "hi" : "en", isSol);
+  };
+
   const heading = SECTION_HEADINGS[targetSection] || SECTION_HEADINGS.test_series;
 
   return (
@@ -184,28 +197,28 @@ export default function SmartQuizzesFeed({
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => exportTestPaperPdf(q.titleEn, q.questions, "en", false)}
+                      onClick={() => handleDirectPdf(q, "qEn")}
                       className="inline-flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[#0B1B3D] text-[11px] font-extrabold px-2.5 py-2 rounded-xl transition"
                     >
                       <Download className="w-3.5 h-3.5" /> Question PDF (EN)
                     </button>
                     <button
                       type="button"
-                      onClick={() => exportTestPaperPdf(q.titleHi, q.questions, "hi", false)}
+                      onClick={() => handleDirectPdf(q, "qHi")}
                       className="inline-flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[#0B1B3D] text-[11px] font-extrabold px-2.5 py-2 rounded-xl transition"
                     >
                       <Download className="w-3.5 h-3.5" /> प्रश्न-पत्र PDF (हिन्दी)
                     </button>
                     <button
                       type="button"
-                      onClick={() => exportTestPaperPdf(q.titleEn, q.questions, "en", true)}
+                      onClick={() => handleDirectPdf(q, "sEn")}
                       className="inline-flex items-center justify-center gap-1.5 bg-[#0B1B3D]/5 hover:bg-[#0B1B3D]/10 text-[#0B1B3D] text-[11px] font-extrabold px-2.5 py-2 rounded-xl transition"
                     >
                       <FileText className="w-3.5 h-3.5" /> Solution PDF (EN)
                     </button>
                     <button
                       type="button"
-                      onClick={() => exportTestPaperPdf(q.titleHi, q.questions, "hi", true)}
+                      onClick={() => handleDirectPdf(q, "sHi")}
                       className="inline-flex items-center justify-center gap-1.5 bg-[#0B1B3D]/5 hover:bg-[#0B1B3D]/10 text-[#0B1B3D] text-[11px] font-extrabold px-2.5 py-2 rounded-xl transition"
                     >
                       <FileText className="w-3.5 h-3.5" /> व्याख्या PDF (हिन्दी)
